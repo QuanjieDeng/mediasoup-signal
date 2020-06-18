@@ -461,3 +461,6 @@ amqper.connect(() => {
     log.info(`message: Error in Erizo Controller, ${logger.objectToLog(error)}`);
   }
 });
+
+
+

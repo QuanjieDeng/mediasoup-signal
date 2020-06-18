@@ -2,14 +2,8 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
-
-const spawn = require('child_process').spawn;
-
 // eslint-disable-next-line import/no-unresolved
 const config = require('./../../licode_config');
-const ErizoList = require('./erizoList').ErizoList;
-const fs = require('fs');
-const RovReplManager = require('./../common/ROV/rovReplManager').RovReplManager;
 
 // Configuration default values
 global.config = config || {};
@@ -25,7 +19,6 @@ global.config.erizoAgent.useIndividualLogFiles =
 global.config.erizoAgent.launchDebugErizoJS = global.config.erizoAgent.launchDebugErizoJS || false;
 
 const BINDED_INTERFACE_NAME = global.config.erizoAgent.networkInterface;
-const LAUNCH_SCRIPT = './launch.sh';
 
 // Parse command line arguments
 const getopt = new Getopt([
@@ -41,17 +34,15 @@ const getopt = new Getopt([
   ['h', 'help', 'display this help'],
 ]);
 
+//房间管理
+const rooms  = false;
+
 const interfaces = require('os').networkInterfaces();
-
-
 const addresses = [];
-
 let privateIP;
 let publicIP;
 let address;
-
 const opt = getopt.parse(process.argv.slice(2));
-
 let metadata;
 
 Object.keys(opt.options).forEach((prop) => {
@@ -97,16 +88,7 @@ Object.keys(opt.options).forEach((prop) => {
   }
 });
 
-// Load submodules with updated config
-const logger = require('./../common/logger').logger;
-const amqper = require('./../common/amqper');
-
-// Logger
-const log = logger.getLogger('ErizoAgent');
-
-const erizos = new ErizoList(global.config.erizoAgent.prerunProcesses,
-  global.config.erizoAgent.maxProcesses);
-
+//get   uuid
 const guid = (function guid() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
@@ -119,125 +101,80 @@ const guid = (function guid() {
   };
 }());
 
-const replManager = new RovReplManager(erizos);
 
-const printErizoLogMessage = (id, message) => {
-  // eslint-disable-next-line no-console
-  console.log(id, message);
-};
-
+// Load submodules with updated config
+const logger = require('./../common/logger').logger;
+const amqper = require('./../common/amqper');
 const myErizoAgentId = guid();
-
-const launchErizoJS = (erizo) => {
-  const id = erizo.id;
-  log.debug(`message: launching ErizoJS, erizoId: ${id}`);
-  let erizoProcess; let out; let
-    err;
-  const erizoLaunchOptions = ['./../erizoJS/erizoJS.js', id, privateIP, publicIP];
-  if (global.config.erizoAgent.launchDebugErizoJS) {
-    erizoLaunchOptions.push('-d');
-  }
-
-  if (global.config.erizoAgent.useIndividualLogFiles) {
-    out = fs.openSync(`${global.config.erizoAgent.instanceLogDir}/erizo-${id}.log`, 'a');
-    err = fs.openSync(`${global.config.erizoAgent.instanceLogDir}/erizo-${id}.log`, 'a');
-    erizoProcess = spawn(LAUNCH_SCRIPT, erizoLaunchOptions,
-      { detached: true, stdio: ['ignore', out, err] });
-  } else {
-    erizoProcess = spawn(LAUNCH_SCRIPT, erizoLaunchOptions,
-      { detached: true, stdio: ['ignore', 'pipe', 'pipe'] });
-    erizoProcess.stdout.setEncoding('utf8');
-    erizoProcess.stdout.on('data', (message) => {
-      printErizoLogMessage(`[erizo-${id}]`, message.replace(/\n$/, ''));
-    });
-    erizoProcess.stderr.setEncoding('utf8');
-    erizoProcess.stderr.on('data', (message) => {
-      printErizoLogMessage(`[erizo-${id}]`, message.replace(/\n$/, ''));
-    });
-  }
-  erizoProcess.unref();
-  erizoProcess.on('close', () => {
-    log.info(`message: closed, erizoId: ${id}`);
-    erizos.delete(id);
-
-    if (out !== undefined) {
-      fs.close(out, (message) => {
-        if (message) {
-          log.error('message: error closing log file, ',
-            `erizoId: ${id}`, 'error:', message);
-        }
-      });
-    }
-
-    if (err !== undefined) {
-      fs.close(err, (message) => {
-        if (message) {
-          log.error('message: error closing log file, ',
-            `erizoId: ${id}`, 'error:', message);
-        }
-      });
-    }
-    erizos.fill();
-  });
-
-  log.info(`message: launched new ErizoJS, erizoId: ${id}`);
-  // eslint-disable-next-line no-param-reassign
-  erizo.process = erizoProcess;
-};
-
-erizos.on('launch-erizo', launchErizoJS);
-
-const dropErizoJS = (erizoId, callback) => {
-  const process = erizos.delete(erizoId);
-  if (process) {
-    log.warn('message: Dropping Erizo that was not closed before - ' +
-               `possible publisher/subscriber mismatch, erizoId: ${erizoId}`);
-    process.kill();
-    callback('callback', 'ok');
-  }
-};
-
-const cleanErizos = () => {
-  log.debug(`message: killing erizoJSs on close, numProcesses: ${erizos.running.length}`);
-  erizos.forEach((erizo) => {
-    const process = erizo.process;
-    if (process) {
-      log.debug(`message: killing process, processId: ${process.pid}`);
-      process.kill('SIGKILL');
-    }
-  });
-  erizos.clear();
-  process.exit(0);
-};
-
-// TODO: get metadata from a file
 const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId, metadata });
+// Logger
+const log = logger.getLogger('ErizoAgent');
 
-const api = {
-  createErizoJS(internalId, callback) {
-    try {
-      const erizo = erizos.getErizo(internalId);
-      log.debug(`message: createErizoJS returning, erizoId: ${erizo.id} ` +
-        `agentId: ${myErizoAgentId}, internalId: ${erizo.position}`);
-      callback('callback',
-        { erizoId: erizo.id, agentId: myErizoAgentId, internalId: erizo.position });
-      erizos.fill();
-    } catch (error) {
-      log.error('message: error creating ErizoJS, error:', error);
-    }
-  },
-  deleteErizoJS(id, callback) {
-    try {
-      dropErizoJS(id, callback);
-    } catch (err) {
-      log.error('message: error stopping ErizoJS');
-    }
-  },
-  rovMessage: (args, callback) => {
-    replManager.processRpcMessage(args, callback);
-  },
-  getErizoAgents: reporter.getErizoAgent,
-};
+// const erizos = new ErizoList(global.config.erizoAgent.prerunProcesses,
+  // global.config.erizoAgent.maxProcesses);
+
+
+
+//清楚EA- 析构操作
+function cleanEA(){
+
+}
+
+
+// const api = {
+//   //为一个房间获取分配一个EA,EC广播该消息，收到的EA根据自己的情况进行回复
+//   getEA:(roomid, callback)=>{
+//     try {
+//       //判断自身条件
+//       //创建room,并分配一个worker给他
+//       //回复EC
+//       log.debug(`message: getEA  roomid: ${roomid} agentId: ${myErizoAgentId}`);
+//       callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+//     } catch (error) {
+//       log.error('message: error  getEA, error:', error);
+//     }
+//   },
+//   //解除room和EA的关系
+//   releaseEA: (roomid, callback)=>{
+//     try {
+//       //根据roomid 找到room 获取其中的Router 关闭
+//       //删除room
+//       log.debug(`message: releaseEA  roomid: ${roomid} agentId: ${myErizoAgentId}`);
+//       callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+//     } catch (error) {
+//       log.error('message: error releaseEA, error:', error);
+//     }
+//   },
+
+//   //处理user信令消息
+//   handleUserRequest: (roomid,userid,callback)=>{
+//     try {
+//       //找到用户，交给用户去处理
+//       log.debug(`message: handleUserRequest  roomid: ${roomid} userid:${userid} agentId: ${myErizoAgentId}`);
+//       // callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+//     } catch (error) {
+//       log.error('message: error handleUserRequest, error:', error);
+//     }
+//   },
+//   //用户离开房间-断开连接，或者其他的原因等等
+//   deleteUser: (roomid,userid,callback)=>{
+//     try {
+//       //找到room，交给room去处理
+//       log.debug(`message: deleteUser  roomid: ${roomid} userid:${userid} agentId: ${myErizoAgentId}`);
+//       // callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+//     } catch (error) {
+//       log.error('message: error deleteUser, error:', error);
+//     }
+//   },
+//   rovMessage: (args, callback) => {
+//     replManager.processRpcMessage(args, callback);
+//   },
+
+//   getErizoAgents:(callback) =>{
+//     log.debug(`message: getErizoAgents---`);
+//     reporter.getErizoAgent(callback);
+//   },
+// };
 
 if (interfaces) {
   Object.keys(interfaces).forEach((k) => {
@@ -273,23 +210,22 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
       } else {
         log.info('Got public ip: ', data);
         publicIP = data;
-        erizos.fill();
       }
     });
-  } else {
-    erizos.fill();
   }
 } else {
   publicIP = global.config.erizoAgent.publicIP;
-  erizos.fill();
 }
+//创建 worker
 
-// Will clean all erizoJS on those signals
-process.on('SIGINT', cleanErizos);
-process.on('SIGTERM', cleanErizos);
 
+exports.getContext = () => rooms;
+exports.getReporter = () => reporter;
+exports.getAgentId = () => myErizoAgentId;
+
+const rpcPublic = require('./rpc/rpcPublic');
 amqper.connect(() => {
-  amqper.setPublicRPC(api);
+  amqper.setPublicRPC(rpcPublic);
   amqper.bind('ErizoAgent');
   amqper.bind(`ErizoAgent_${myErizoAgentId}`);
   amqper.bindBroadcast('ErizoAgent', () => {

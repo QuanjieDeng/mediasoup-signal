@@ -33,7 +33,7 @@ class Room extends events.EventEmitter {
       }
     };
 
-    this.ecch.getMeiasoupWorker(this.id,rpccallback);
+    this.ecch.getMeiasoupWorker(this.id,this.erizoControllerId,rpccallback);
   }
 
   hasClientWithId(id) {

@@ -6,12 +6,12 @@ let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 
 //为一个房间获取分配一个worker,EC广播该消息，收到的EA根据自己的情况进行回复
-exports.getMediasoupWork= (roomid, callback)=>{
+exports.getMediasoupWork= (roomid, erizoControllerid,callback)=>{
   try {
     //判断自身条件
     //创建room,并分配一个worker给他
     //回复EC
-    log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId}`);
+    log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid}`);
     var workerId ="123123";
     callback('callback',{ roomid: roomid, agentId: ErizoAgentId,workerId:workerId});
   } catch (error) {
@@ -32,11 +32,11 @@ exports.getMediasoupWork= (roomid, callback)=>{
 // };
 
 //处理user信令消息
-exports.handleUserRequest=(roomid,userid,callback)=>{
+exports.handleUserRequest=(roomid,userid,message,callback)=>{
   try {
     //找到用户，交给用户去处理
-    log.debug(`message: handleUserRequest  roomid: ${roomid} userid:${userid} agentId: ${myErizoAgentId}`);
-    // callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+    log.debug(`message: handleUserRequest  roomid: ${roomid} userid:${userid} agentId: ${ErizoAgentId}`);
+    callback('callback',{ roomid: roomid, agentId: ErizoAgentId});
   } catch (error) {
     log.error('message: error handleUserRequest, error:', error);
   }

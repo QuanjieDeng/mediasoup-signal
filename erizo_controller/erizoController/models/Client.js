@@ -91,7 +91,7 @@ class Client extends events.EventEmitter {
       callback("sucess",{data:{}});
 
     };
-    // this.room.controller.processReqMessageFromClient(this.room.id, this.id, message.data, rpccallback.bind(this));
+    this.room.controller.processReqMessageFromClient(this.room.id, this.id, message.data, rpccallback.bind(this));
   }
 
 

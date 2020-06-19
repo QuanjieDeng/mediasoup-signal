@@ -75,29 +75,14 @@ exports.RoomController = (spec) => {
 
 
   //就是对客户端的消息进行转发到EA 
-  that.processConnectionMessageFromClient = (erizoId, clientId, connectionId, msg, callback) => {
-    const args = [erizoControllerId, clientId, connectionId, msg];
-    amqper.callRpc(getErizoQueueFromErizoId(erizoId), 'processConnectionMessage', args, { callback });
+  that.processReqMessageFromClient = (roomid, clientId, msg, callback) => {
+    const args = [roomid, clientId, msg];
+    var   agentid = `ErizoAgent_${erizoAgentId}`;
+    amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
   };
-
-
-
-
-
-
-
 
   that.removeClient = (clientId) => {
     log.info(`message: removeClient clientId ${clientId}`);
-    erizos.forEachUniqueErizo((erizo) => {
-      const erizoId = erizo.erizoId;
-      const args = [clientId];
-      log.info(`message: removeClient - calling ErizoJS to remove client, erizoId: ${erizoId}, clientId: ${clientId}`);
-      amqper.callRpc(`ErizoJS_${erizoId}`, 'removeClient', args, {
-        callback: (result) => {
-          log.info(`message: removeClient - result from erizoJS ${erizo.erizoId}, result ${result}`);
-        } });
-    });
   };
 
   return that;

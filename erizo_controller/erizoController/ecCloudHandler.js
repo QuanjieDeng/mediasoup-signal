@@ -70,17 +70,43 @@ exports.EcCloudHandler = (spec) => {
       global.config.erizoController.cloudHandlerPolicy}`).getErizoAgent;
   }
 
+  if (global.config.erizoController.cloudHandlerPolicy) {
+    // eslint-disable-next-line global-require, import/no-dynamic-require
+    getErizoAgent = require(`./ch_policies/${
+      global.config.erizoController.cloudHandlerPolicy}`).getErizoAgent;
+  }
+
+  const getMeiasoupWorkerTryAgain = (count,roomid,erizoControllerid, callback) => {
+    if (count >= AGENTS_ATTEMPTS) {
+      callback('timeout');
+      return;
+    }
+
+    log.warn('message: agent selected timed out trying again, ' +
+             `code: ${WARN_TIMEOUT}`);
+
+    amqper.callRpc('ErizoAgent', 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
+      const roomid = resp.roomid;
+      const agentId = resp.agentId;
+      const workerId = resp.workerId;
+      if (resp === 'timeout') {
+        tryAgain((count += 1), callback);
+      } else {
+        callback(roomid, agentId, workerId);
+      }
+    } });
+  };
 
 
 
-  that.getMeiasoupWorker = (roomid,callbackFor) =>{
+  that.getMeiasoupWorker = (roomid,erizoControllerid,callbackFor) =>{
     let agentQueue = 'ErizoAgent';
 
     if (getErizoAgent) {
       agentQueue = getErizoAgent(agents, undefined);
     }
     log.info(`message: getMeiasoupWorker, agentId: ${agentQueue}`);
-    amqper.callRpc(agentQueue, 'getMediasoupWork', [roomid], { callback(resp) {
+    amqper.callRpc(agentQueue, 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
       const roomid = resp.roomid;
       const agentId = resp.agentId;
       const workerId = resp.workerId;
@@ -88,7 +114,7 @@ exports.EcCloudHandler = (spec) => {
         `agentId: ${agentId}, workerId: ${workerId}`);
 
       if (resp === 'timeout') {
-        getMeiasoupWorkerTryAgain(0,roomid, callbackFor);
+        getMeiasoupWorkerTryAgain(0,roomid, erizoControllerid,callbackFor);
       } else {
         callbackFor(roomid, agentId, workerId);
       }

@@ -7,6 +7,7 @@ EA rpc接口文档
 每次请求时传入roomid,EA就可以根据roomid找到对应的worker
 ### 请求参数
 - roomid 房间ID
+- erizoControllerid EC的ID
 ### 返回参数
 ```
 {

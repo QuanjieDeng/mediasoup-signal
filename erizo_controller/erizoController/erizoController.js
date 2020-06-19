@@ -308,12 +308,10 @@ const listen = () => {
     channel.on('connected', (token, options, callback) => {
       options = options || {};
       try {
-        const room = rooms.getOrCreateRoom(myId, token.room, token.p2p);
-        options.singlePC = getSinglePCConfig(options.singlePC);
+        const room = rooms.getOrCreateRoom(myId, token.room);
         const client = room.createClient(channel, token, options);
-        log.info(`message: client connected, clientId: ${client.id}, ` +
-            `singlePC: ${options.singlePC}`);
-        if (!room.p2p && global.config.erizoController.report.session_events) {
+        log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
+        if (global.config.erizoController.report.session_events) {
           const timeStamp = new Date();
           amqper.broadcast('event', { room: room.id,
             user: client.id,
@@ -322,19 +320,9 @@ const listen = () => {
             timestamp: timeStamp.getTime() });
         }
 
-        const streamList = [];
-        room.streamManager.forEachPublishedStream((stream) => {
-          streamList.push(stream.getPublicStream());
-        });
-
-        callback('success', { streams: streamList,
+        callback('success', {
           id: room.id,
-          clientId: client.id,
-          singlePC: options.singlePC,
-          p2p: room.p2p,
-          defaultVideoBW: global.config.erizoController.defaultVideoBW,
-          maxVideoBW: global.config.erizoController.maxVideoBW,
-          iceServers: global.config.erizoController.iceServers });
+          clientId: client.id });
       } catch (e) {
         log.warn('message: error creating Room or Client, error:', e);
       }

@@ -91,6 +91,7 @@ exports.EcCloudHandler = (spec) => {
     } });
   };
 
+  //这个需要调整为getMeiasoupWorker  TODO
   that.getErizoJS = (agentId, internalId, callback) => {
     let agentQueue = 'ErizoAgent';
 
@@ -115,6 +116,7 @@ exports.EcCloudHandler = (spec) => {
     } });
   };
 
+  //TODO 需要调整为 //releaseMeiasoupWorker
   that.deleteErizoJS = (erizoId) => {
     log.info(`message: deleting erizoJS, erizoId: ${erizoId}`);
     amqper.broadcast('ErizoAgent', { method: 'deleteErizoJS', args: [erizoId] }, () => {});

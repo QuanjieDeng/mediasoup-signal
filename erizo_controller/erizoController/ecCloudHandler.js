@@ -70,57 +70,32 @@ exports.EcCloudHandler = (spec) => {
       global.config.erizoController.cloudHandlerPolicy}`).getErizoAgent;
   }
 
-  const tryAgain = (count, callback) => {
-    if (count >= AGENTS_ATTEMPTS) {
-      callback('timeout');
-      return;
-    }
 
-    log.warn('message: agent selected timed out trying again, ' +
-             `code: ${WARN_TIMEOUT}`);
 
-    amqper.callRpc('ErizoAgent', 'createErizoJS', [undefined], { callback(resp) {
-      const erizoId = resp.erizoId;
-      const agentId = resp.agentId;
-      const internalId = resp.internalId;
-      if (resp === 'timeout') {
-        tryAgain((count += 1), callback);
-      } else {
-        callback(erizoId, agentId, internalId);
-      }
-    } });
-  };
 
-  //这个需要调整为getMeiasoupWorker  TODO
-  that.getErizoJS = (agentId, internalId, callback) => {
+  that.getMeiasoupWorker = (roomid,callbackFor) =>{
     let agentQueue = 'ErizoAgent';
 
     if (getErizoAgent) {
-      agentQueue = getErizoAgent(agents, agentId);
+      agentQueue = getErizoAgent(agents, undefined);
     }
-
-    log.info(`message: createErizoJS, agentId: ${agentQueue}`);
-
-    amqper.callRpc(agentQueue, 'createErizoJS', [internalId], { callback(resp) {
-      const erizoId = resp.erizoId;
-      const newAgentId = resp.agentId;
-      const newInternalId = resp.internalId;
-      log.info(`message: createErizoJS success, erizoId: ${erizoId}, ` +
-        `agentId: ${newAgentId}, internalId: ${newInternalId}`);
+    log.info(`message: getMeiasoupWorker, agentId: ${agentQueue}`);
+    amqper.callRpc(agentQueue, 'getMediasoupWork', [roomid], { callback(resp) {
+      const roomid = resp.roomid;
+      const agentId = resp.agentId;
+      const workerId = resp.workerId;
+      log.info(`message: getMeiasoupWorker success, roomid: ${roomid}, ` +
+        `agentId: ${agentId}, workerId: ${workerId}`);
 
       if (resp === 'timeout') {
-        tryAgain(0, callback);
+        getMeiasoupWorkerTryAgain(0,roomid, callbackFor);
       } else {
-        callback(erizoId, newAgentId, newInternalId);
+        callbackFor(roomid, agentId, workerId);
       }
     } });
-  };
 
-  //TODO 需要调整为 //releaseMeiasoupWorker
-  that.deleteErizoJS = (erizoId) => {
-    log.info(`message: deleting erizoJS, erizoId: ${erizoId}`);
-    amqper.broadcast('ErizoAgent', { method: 'deleteErizoJS', args: [erizoId] }, () => {});
-  };
+  }
+
 
   that.getErizoAgentsList = () => JSON.stringify(agents);
 

@@ -19,17 +19,17 @@ exports.getMediasoupWork= (roomid, callback)=>{
   }
 };
 
-//解除room和worker的关系
-exports.releaseMediasoupWork=  (roomid, callback)=>{
-  try {
-    //根据roomid 找到room 获取其中的Router 关闭
-    //删除room
-    log.debug(`message: releaseEA  roomid: ${roomid} agentId: ${myErizoAgentId}`);
-    callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
-  } catch (error) {
-    log.error('message: error releaseEA, error:', error);
-  }
-};
+// //解除room和worker的关系
+// exports.releaseMediasoupWork=  (roomid, callback)=>{
+//   try {
+//     //根据roomid 找到room 获取其中的Router 关闭
+//     //删除room
+//     log.debug(`message: releaseEA  roomid: ${roomid} agentId: ${myErizoAgentId}`);
+//     callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
+//   } catch (error) {
+//     log.error('message: error releaseEA, error:', error);
+//   }
+// };
 
 //处理user信令消息
 exports.handleUserRequest=(roomid,userid,callback)=>{

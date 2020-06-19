@@ -321,7 +321,7 @@ const listen = () => {
         }
 
         callback('success', {
-          id: room.id,
+          roomId: room.id,
           clientId: client.id });
       } catch (e) {
         log.warn('message: error creating Room or Client, error:', e);

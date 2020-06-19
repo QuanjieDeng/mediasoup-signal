@@ -23,7 +23,7 @@ class Client extends events.EventEmitter {
 
   listenToSocketEvents() {
     log.debug(`message: Adding listeners to socket events, client.id: ${this.id}`);
-    // this.socketEventListeners.set('sendDataStream', this.onSendDataStream.bind(this));
+    this.socketEventListeners.set('getRouterRtpCapabilities', this.ongetRouterRtpCapabilities.bind(this));
 
     this.socketEventListeners.forEach((value, key) => {
       this.channel.socketOn(key, value);
@@ -75,6 +75,23 @@ class Client extends events.EventEmitter {
       }
       this.room.removeClient(this.id);
       this.emit('disconnect');
+  }
+
+  //
+  ongetRouterRtpCapabilities(message,callback){
+    log.info(`message: ongetRouterRtpCapabilities,messgae: ${message} `);
+    if (this.room === undefined) {
+      log.error(`message: ongetRouterRtpCapabilities for user in undefined room user: ${this.user}`);
+      this.disconnect();
+      return;
+    }
+
+    const rpccallback = (result) => {
+      log.info("ongetRouterRtpCapabilities  rpccallback:"+result);
+      callback("sucess",{data:{}});
+
+    };
+    // this.room.controller.processReqMessageFromClient(this.room.id, this.id, message.data, rpccallback.bind(this));
   }
 
 

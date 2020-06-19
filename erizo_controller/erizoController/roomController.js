@@ -13,13 +13,12 @@ exports.RoomController = (spec) => {
   const amqper = spec.amqper;
   const ecch = spec.ecch;
   const erizoControllerId = spec.erizoControllerId;
+  const erizoAgentId = spec.erizoAgentId;
   const KEEPALIVE_INTERVAL = 5 * 1000;
   const TIMEOUT_LIMIT = 2;
   const MAX_ERIZOJS_RETRIES = 3;
   const eventListeners = [];
 
-  let getErizoJS;
-  let currentErizo = 0;
 
   //保留
   const dispatchEvent = (type, evt) => {

@@ -14,7 +14,26 @@ class Room extends events.EventEmitter {
     this.erizoControllerId = erizoControllerId;
     this.amqper = amqper;
     this.ecch = ecch;
-    this.setupRoomController();
+    this.status = "start";   //start---run---error
+    this.init();
+  }
+
+
+  init(){
+    //申请分配EA
+    const rpccallback = (roomid, agentId, workerId) => {
+      if(roomid != "timeout"){
+        this.status = "run";
+        this.erizoAgentId =   agentId;
+        this.workerId = workerId;
+        this.setupRoomController();
+      }else{
+        log.error(`message: Room：${id} can't get mediaosupworker!`);
+        this.status = "error";
+      }
+    };
+
+    this.ecch.getMeiasoupWorker(this.id,rpccallback);
   }
 
   hasClientWithId(id) {
@@ -57,7 +76,7 @@ class Room extends events.EventEmitter {
       amqper: this.amqper,
       ecch: this.ecch,
       erizoControllerId: this.erizoControllerId,
-      // streamManager: this.streamManager,
+      erizoAgentId: this.erizoAgentId,
     });
     this.controller.addEventListener(this.onRoomControllerEvent.bind(this));
   }
@@ -108,6 +127,8 @@ class Rooms extends events.EventEmitter {
     let room = this.rooms.get(id);
     if (room === undefined) {
       room = new Room(erizoControllerId, this.amqper, this.ecch, id);
+      log.info("room-status："+room.status);
+      log.info("room-erizoAgentId"+room.erizoAgentId);
       this.rooms.set(room.id, room);
       room.on('room-empty', this.deleteRoom.bind(this, id));
       this.emit('updated');

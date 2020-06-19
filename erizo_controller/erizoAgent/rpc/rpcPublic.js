@@ -5,21 +5,22 @@ const log = logger.getLogger('ErizoAgent');
 let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 
-//为一个房间获取分配一个EA,EC广播该消息，收到的EA根据自己的情况进行回复
-exports.getEA= (roomid, callback)=>{
+//为一个房间获取分配一个worker,EC广播该消息，收到的EA根据自己的情况进行回复
+exports.getMediasoupWork= (roomid, callback)=>{
   try {
     //判断自身条件
     //创建room,并分配一个worker给他
     //回复EC
     log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId}`);
-    callback('callback',{ roomid: roomid, agentId: ErizoAgentId});
+    var workerId ="123123";
+    callback('callback',{ roomid: roomid, agentId: ErizoAgentId,workerId:workerId});
   } catch (error) {
     log.error('message: error  getEA, error:', error);
   }
 };
 
-//解除room和EA的关系
-exports.releaseEA=  (roomid, callback)=>{
+//解除room和worker的关系
+exports.releaseMediasoupWork=  (roomid, callback)=>{
   try {
     //根据roomid 找到room 获取其中的Router 关闭
     //删除room

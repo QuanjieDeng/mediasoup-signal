@@ -124,14 +124,24 @@ class Channel extends events.EventEmitter {
 
   sendMessage(type, arg) {
     if (this.state === RECONNECTING) {
-      this.addToBuffer(type, arg);
+      this.addToBuffer(type, arg,undefined);
       return;
     }
     this.socket.emit(type, arg);
   }
 
-  addToBuffer(type, arg) {
-    this.messageBuffer.push([type, arg]);
+
+  sendMessageSync(type, arg,callback) {
+    if (this.state === RECONNECTING) {
+      //TODO
+      this.addToBuffer(type, arg,callback);
+      return;
+    }
+    this.socket.emit(type, arg,callback);
+  }
+
+  addToBuffer(type, arg,callback) {
+    this.messageBuffer.push([type, arg,callback]);
   }
 
   getBuffer() {
@@ -146,7 +156,11 @@ class Channel extends events.EventEmitter {
       ', channelId:', this.id);
     buffer.forEach((message) => {
       log.debug('message: sending buffered message, message:', message, ', channelId:', this.id);
-      this.sendMessage(...message);
+      if(message.length ==3 &&  message[2]!= undefined){//长度为3 并且[2]不为undefied，则表明是有callback函数的，使用sendMessageSync发送
+        this.sendMessageSync(...message);
+      }else{
+        this.sendMessage(message[0],message[1]);
+      }
     });
   }
 

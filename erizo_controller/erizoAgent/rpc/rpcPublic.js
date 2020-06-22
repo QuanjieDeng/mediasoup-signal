@@ -5,6 +5,7 @@ const log = logger.getLogger('ErizoAgent');
 let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 
+
 //为一个房间获取分配一个worker,EC广播该消息，收到的EA根据自己的情况进行回复
 exports.getMediasoupWork= (roomid, erizoControllerid,callback)=>{
   try {
@@ -19,24 +20,18 @@ exports.getMediasoupWork= (roomid, erizoControllerid,callback)=>{
   }
 };
 
-// //解除room和worker的关系
-// exports.releaseMediasoupWork=  (roomid, callback)=>{
-//   try {
-//     //根据roomid 找到room 获取其中的Router 关闭
-//     //删除room
-//     log.debug(`message: releaseEA  roomid: ${roomid} agentId: ${myErizoAgentId}`);
-//     callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
-//   } catch (error) {
-//     log.error('message: error releaseEA, error:', error);
-//   }
-// };
 
 //处理user信令消息
 exports.handleUserRequest=(roomid,userid,message,callback)=>{
   try {
     //找到用户，交给用户去处理
     log.debug(`message: handleUserRequest  roomid: ${roomid} userid:${userid} agentId: ${ErizoAgentId}`);
-    callback('callback',{ roomid: roomid, agentId: ErizoAgentId});
+        
+    callback('callback',{ roomid: roomid, agentId: ErizoAgentId,retEvent:"success",data: {data:{}} });
+    // callback('callback',{ roomid: roomid, agentId: ErizoAgentId,retEvent:"error",data: {errmsg:"", errcode:1002}});
+
+
+
   } catch (error) {
     log.error('message: error handleUserRequest, error:', error);
   }

@@ -93,13 +93,15 @@ class Room extends events.EventEmitter {
     }
   }
 
-  sendConnectionMessageToClient(clientId, connectionId, info, evt) {
+  //用户消息单播
+  sendSingleMessageToClient(clientId,msg, methed,callback) {
     const client = this.getClientById(clientId);
     if (client) {
-      client.sendMessage('connection_message_erizo', { connectionId, info, evt });
+      client.sendMessageSync(methed,msg,callback);
     }
   }
 
+  //房间内消息广播
   sendMessage(method, args) {
     this.forEachClient((client) => {
       log.debug('message: sendMsgToRoom,',

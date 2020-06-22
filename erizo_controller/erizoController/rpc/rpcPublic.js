@@ -30,8 +30,13 @@ exports.deleteUser = (args, callback) => {
   });
 };
 
-exports.connectionStatusEvent = (clientId, connectionId, info, evt) => {
-  erizoController.connectionStatusEvent(clientId, connectionId, info, evt);
+//
+exports.forwordSingleMsgToClient = (clientId, msg,methed,callback) => {
+  erizoController.forwordSingleMsgToClient(clientId, msg,methed,callback);
+};
+
+exports.forwordSingleMsgToRoom = (roomid, msg,methed) => {
+  erizoController.forwordSingleMsgToRoom(roomid, msg,methed);
 };
 
 exports.rovMessage = (args, callback) => {

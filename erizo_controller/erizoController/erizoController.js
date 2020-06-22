@@ -52,6 +52,7 @@ global.config.erizoController.roles = global.config.erizoController.roles ||
         screen: false,
         data: true } } };
 
+
 // Parse command line arguments
 const getopt = new Getopt([
   ['r', 'rabbit-host=ARG', 'RabbitMQ Host'],
@@ -112,7 +113,6 @@ const Channel = require('./models/Channel').Channel;
 
 // Logger
 const log = logger.getLogger('ErizoController');
-
 let server;
 
 if (global.config.erizoController.listen_ssl) {
@@ -428,13 +428,26 @@ exports.deleteRoom = (roomId, callback) => {
 
 exports.getContext = () => rooms;
 
-exports.connectionStatusEvent = (clientId, connectionId, info, evt) => {
-  log.info('connectionStatusEvent', clientId, connectionId, info, JSON.stringify(evt));
+exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
+  log.debug('message: forwordSingleMsgToClient', clientId, methed, msg, JSON.stringify(msg));
   const room = rooms.getRoomWithClientId(clientId);
   if (room) {
-    room.sendConnectionMessageToClient(clientId, connectionId, info, evt);
+    const socketiocallback = (event,msg) => {
+      log.debug(`message: forwordSingleMsgToClient  socketiocallback:-event:${event} msg:${msg}`);
+      callback('callback',{ event,msg});
+    };
+    room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
   }
 };
+exports.forwordSingleMsgToRoom = (roomid,msg, methed) => {
+  log.debug('message: forwordSingleMsgToRoom', roomid, methed, msg, JSON.stringify(msg));
+  const room = rooms.getRoomById(roomid);
+  if (room) {
+    room.sendMessage(methed,msg);
+  }
+};
+
+
 
 amqper.connect(() => {
   try {

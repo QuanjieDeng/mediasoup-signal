@@ -158,6 +158,11 @@ exports.getContext = () => rooms;
 exports.getReporter = () => reporter;
 exports.getAgentId = () => myErizoAgentId;
 
+
+exports.getAmqp = () => amqper;
+
+
+
 const rpcPublic = require('./rpc/rpcPublic');
 amqper.connect(() => {
   amqper.setPublicRPC(rpcPublic);

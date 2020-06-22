@@ -54,11 +54,14 @@ class Client extends events.EventEmitter {
   }
 
 
-
+  //发送消息没有callback
   sendMessage(type, arg) {
     this.channel.sendMessage(type, arg);
   }
 
+  sendMessageSync(type, arg,callback) {
+    this.channel.sendMessageSync(type, arg,callback);
+  }
 
   onDisconnect() {
     this.stopListeningToSocketEvents();
@@ -85,10 +88,14 @@ class Client extends events.EventEmitter {
       this.disconnect();
       return;
     }
-
     const rpccallback = (result) => {
-      log.info("ongetRouterRtpCapabilities  rpccallback:"+result);
-      callback("sucess",{data:{}});
+      log.info("ongetRouterRtpCapabilities  rpccallback:"+JSON.stringify(result));
+      var roomid =   result.roomid;
+      var agentId =   result.agentId;
+      var ErizoAgentId =   result.ErizoAgentId;
+      var retEvent =  result.retEvent;
+      var  data =  result.data;
+      callback(retEvent,data);
 
     };
     this.room.controller.processReqMessageFromClient(this.room.id, this.id, message.data, rpccallback.bind(this));

@@ -1,7 +1,7 @@
 /*
 workermanager.js 负责woker的创建，消除，负载分配
 */
-const erizoAgent = require('.erizoAgent');
+const erizoAgent = require('./erizoAgent');
 const logger = require('./../common/logger').logger;
 const log = logger.getLogger('ErizoAgent');
 const mediasoup = require('mediasoup');

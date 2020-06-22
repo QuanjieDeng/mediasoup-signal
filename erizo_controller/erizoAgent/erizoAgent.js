@@ -5,6 +5,7 @@ const Getopt = require('node-getopt');
 // eslint-disable-next-line import/no-unresolved
 const config = require('./../../licode_config');
 
+
 // Configuration default values
 global.config = config || {};
 global.config.erizoAgent = global.config.erizoAgent || {};
@@ -36,7 +37,6 @@ const getopt = new Getopt([
 
 //房间管理
 const rooms  = false;
-
 const interfaces = require('os').networkInterfaces();
 const addresses = [];
 let privateIP;
@@ -107,6 +107,8 @@ const logger = require('./../common/logger').logger;
 const amqper = require('./../common/amqper');
 const myErizoAgentId = guid();
 const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId, metadata });
+const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
+
 // Logger
 const log = logger.getLogger('ErizoAgent');
 
@@ -163,12 +165,31 @@ exports.getAmqp = () => amqper;
 
 
 
-const rpcPublic = require('./rpc/rpcPublic');
-amqper.connect(() => {
-  amqper.setPublicRPC(rpcPublic);
-  amqper.bind('ErizoAgent');
-  amqper.bind(`ErizoAgent_${myErizoAgentId}`);
-  amqper.bindBroadcast('ErizoAgent', () => {
-    log.warn('message: amqp no method defined');
+// const rpcPublic = require('./rpc/rpcPublic');
+// amqper.connect(() => {
+//   amqper.setPublicRPC(rpcPublic);
+//   amqper.bind('ErizoAgent');
+//   amqper.bind(`ErizoAgent_${myErizoAgentId}`);
+//   amqper.bindBroadcast('ErizoAgent', () => {
+//     log.warn('message: amqp no method defined');
+//   });
+// });
+
+run();
+
+async function run()
+{
+	// Run a mediasoup Worker.
+  await  wm.runMediasoupWorkers();
+  
+  const rpcPublic = require('./rpc/rpcPublic');
+  amqper.connect(() => {
+    amqper.setPublicRPC(rpcPublic);
+    amqper.bind('ErizoAgent');
+    amqper.bind(`ErizoAgent_${myErizoAgentId}`);
+    amqper.bindBroadcast('ErizoAgent', () => {
+      log.warn('message: amqp no method defined');
+    });
   });
-});
+}
+

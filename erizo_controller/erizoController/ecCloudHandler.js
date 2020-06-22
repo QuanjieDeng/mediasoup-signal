@@ -86,20 +86,20 @@ exports.EcCloudHandler = (spec) => {
              `code: ${WARN_TIMEOUT}`);
 
     amqper.callRpc('ErizoAgent', 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
-      const roomid = resp.roomid;
+      const roomid = resp.roomId;
       const agentId = resp.agentId;
-      const workerId = resp.workerId;
+      const routerId = resp.routerId;
       if (resp === 'timeout') {
         tryAgain((count += 1), callback);
       } else {
-        callback(roomid, agentId, workerId);
+        callback(roomid, agentId, routerId);
       }
     } });
   };
 
 
 
-  that.getMeiasoupWorker = (roomid,erizoControllerid,callbackFor) =>{
+  that.getMeiasoupWorker =  (roomid,erizoControllerid,callbackFor) =>{
     let agentQueue = 'ErizoAgent';
 
     if (getErizoAgent) {
@@ -107,21 +107,20 @@ exports.EcCloudHandler = (spec) => {
     }
     log.info(`message: getMeiasoupWorker, agentId: ${agentQueue}`);
     amqper.callRpc(agentQueue, 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
-      const roomid = resp.roomid;
+      const roomid = resp.roomId;
       const agentId = resp.agentId;
-      const workerId = resp.workerId;
+      const routerId = resp.routerId;
       log.info(`message: getMeiasoupWorker success, roomid: ${roomid}, ` +
         `agentId: ${agentId}, workerId: ${workerId}`);
 
       if (resp === 'timeout') {
         getMeiasoupWorkerTryAgain(0,roomid, erizoControllerid,callbackFor);
       } else {
-        callbackFor(roomid, agentId, workerId);
+        callbackFor(roomid, agentId, routerId);
       }
     } });
 
   }
-
 
   that.getErizoAgentsList = () => JSON.stringify(agents);
 

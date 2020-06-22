@@ -1,4 +1,5 @@
 const erizoAgent = require('./../erizoAgent');
+const { sync } = require('glob');
 const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManager;
 const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('ErizoAgent');
@@ -6,19 +7,24 @@ let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 
 
-//为一个房间获取分配一个worker,EC广播该消息，收到的EA根据自己的情况进行回复
-exports.getMediasoupWork= (roomid, erizoControllerid,callback)=>{
-  try {
-    //判断自身条件
-    //创建room,并分配一个worker给他
-    //回复EC
-    log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid}`);
-    var workerId ="123123";
-    callback('callback',{ roomid: roomid, agentId: ErizoAgentId,workerId:workerId});
-  } catch (error) {
-    log.error('message: error  getEA, error:', error);
-  }
+exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
+  // try {
+    log.debug("------1");
+     const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
+     log.debug("------2");
+      log.debug(`message: getEA  roomid: ${room.roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+      log.debug("------3");
+
+      callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
+      log.debug("------4");
+    
+  // } catch (error) {
+    // log.error('message: error  getEA, error:', error);
+  // }
 };
+
+
+
 
 
 //处理user信令消息
@@ -56,7 +62,6 @@ exports.rovMessage=  (args, callback) => {
 };
 
 exports.getErizoAgents = (callback) =>{
-  log.debug(`message: getErizoAgents---`);
   erizoAgent.getReporter().getErizoAgent(callback);
 };
   

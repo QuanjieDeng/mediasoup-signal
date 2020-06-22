@@ -35,7 +35,6 @@ const getopt = new Getopt([
 ]);
 
 //房间管理
-const rooms  = false;
 const interfaces = require('os').networkInterfaces();
 const addresses = [];
 let privateIP;
@@ -103,14 +102,20 @@ const guid = (function guid() {
 
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
+const Room =  require('./models/room').Room;
+const log = logger.getLogger('ErizoAgent');
 const amqper = require('./../common/amqper');
 const myErizoAgentId = guid();
 const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId, metadata });
 const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
+const Rooms = require('./models/rooms').Rooms;
+const rooms =   new Rooms(amqper,wm);
 
 
-// Logger
-const log = logger.getLogger('ErizoAgent');
+
+rooms.on('updated',function(){
+  log.debug(`rooms-updated-rooms'size:${rooms.size()}`);
+})
 
 
 if (interfaces) {
@@ -153,13 +158,13 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
 } else {
   publicIP = global.config.erizoAgent.publicIP;
 }
-//创建 worker
-
 
 exports.getContext = () => rooms;
 exports.getReporter = () => reporter;
 exports.getAgentId = () => myErizoAgentId;
 exports.getAmqp = () => amqper;
+exports.getRooms = () => rooms;
+exports.getVM = () => wm;
 
 
 run();
@@ -180,3 +185,25 @@ async function run()
   });
 }
 
+
+
+
+exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
+  log.info("getOrCreateRoom--------");
+	let room = rooms.getRoomById(roomid);
+
+	// If the Room does not exist create a new one.
+	if (!room)
+	{
+		log.info('creating a new Room [roomId:%s]', roomid);
+
+		const mediasoupWorker = wm.getMediasoupWorker();
+
+		room = await Room.create({ roomid,amqper,erizoControllerid,mediasoupWorker });
+
+    rooms.addRoom(roomid, room);
+    room.on('room-empty', function(){});
+	}
+
+	return room;
+}

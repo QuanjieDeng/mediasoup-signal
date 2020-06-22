@@ -51,6 +51,7 @@ exports.WorkerManager = (spec) => {
   };
 
   that.getMediasoupWorker= () =>{
+      log.info("getMediasoupWorker  list's  len:"+mediasoupWorkers.length);
       const worker = mediasoupWorkers[nextMediasoupWorkerIdx];
       if (++nextMediasoupWorkerIdx === mediasoupWorkers.length)
           nextMediasoupWorkerIdx = 0;

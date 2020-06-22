@@ -164,6 +164,7 @@ module.exports = config;
 
 
 /****** mediasoup *****/
+config.mediasoup = {};
 mediasoup.numWorkers = Object.keys(os.cpus()).length;
 mediasoup.workerSettings = {
     logLevel : 'debug',

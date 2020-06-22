@@ -21,11 +21,11 @@ class Room extends events.EventEmitter {
 
   init(){
     //申请分配EA
-    const rpccallback = (roomid, agentId, workerId) => {
+    const rpccallback = (roomid, agentId, routerId) => {
       if(roomid != "timeout"){
         this.status = "run";
         this.erizoAgentId =   agentId;
-        this.workerId = workerId;
+        this.routerId = routerId;
         this.setupRoomController();
       }else{
         log.error(`message: Room：${id} can't get mediaosupworker!`);

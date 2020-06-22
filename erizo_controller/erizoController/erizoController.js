@@ -293,13 +293,9 @@ const updateMyState = () => {
   nuve.setInfo({ id: myId, state: myState });
 };
 
-const getSinglePCConfig = (singlePC) => {
-  log.info(`message: getting singlePC configuration, singlePc: ${singlePC}` +
-    `, global: ${global.config.erizoController.allowSinglePC}`);
-  return !!singlePC && global.config.erizoController.allowSinglePC;
-};
 
-const listen = () => {
+
+const listen =  () => {
   io.sockets.on('connection', (socket) => {
     log.info(`message: socket connected, socketId: ${socket.id}`);
 
@@ -308,21 +304,23 @@ const listen = () => {
     channel.on('connected', (token, options, callback) => {
       options = options || {};
       try {
-        const room = rooms.getOrCreateRoom(myId, token.room);
-        const client = room.createClient(channel, token, options);
-        log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
-        if (global.config.erizoController.report.session_events) {
-          const timeStamp = new Date();
-          amqper.broadcast('event', { room: room.id,
-            user: client.id,
-            name: token.userName,
-            type: 'user_connection',
-            timestamp: timeStamp.getTime() });
-        }
+        const room =  rooms.getOrCreateRoom(myId, token.room);
+        room.on('room-inited',function(id){
+          const client =  room.createClient(channel, token, options);
+          log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
+          if (global.config.erizoController.report.session_events) {
+            const timeStamp = new Date();
+            amqper.broadcast('event', { room: room.id,
+              user: client.id,
+              name: token.userName,
+              type: 'user_connection',
+              timestamp: timeStamp.getTime() });
+          }
+          callback('success', {
+            roomId: room.id,
+            clientId: client.id });
+        });
 
-        callback('success', {
-          roomId: room.id,
-          clientId: client.id });
       } catch (e) {
         log.warn('message: error creating Room or Client, error:', e);
       }

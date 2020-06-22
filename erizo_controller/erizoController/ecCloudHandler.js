@@ -111,7 +111,7 @@ exports.EcCloudHandler = (spec) => {
       const agentId = resp.agentId;
       const routerId = resp.routerId;
       log.info(`message: getMeiasoupWorker success, roomid: ${roomid}, ` +
-        `agentId: ${agentId}, workerId: ${workerId}`);
+        `agentId: ${agentId}, routerId: ${routerId}`);
 
       if (resp === 'timeout') {
         getMeiasoupWorkerTryAgain(0,roomid, erizoControllerid,callbackFor);

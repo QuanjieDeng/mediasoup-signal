@@ -27,6 +27,7 @@ class Room extends events.EventEmitter {
         this.erizoAgentId =   agentId;
         this.routerId = routerId;
         this.setupRoomController();
+        
       }else{
         log.error(`message: Room：${id} can't get mediaosupworker!`);
         this.status = "error";
@@ -79,6 +80,7 @@ class Room extends events.EventEmitter {
       erizoAgentId: this.erizoAgentId,
     });
     this.controller.addEventListener(this.onRoomControllerEvent.bind(this));
+    this.emit('room-inited');
   }
 
   onRoomControllerEvent(type, evt) {
@@ -125,18 +127,18 @@ class Rooms extends events.EventEmitter {
     return this.rooms.size;
   }
 
-  getOrCreateRoom(erizoControllerId, id) {
+getOrCreateRoom(erizoControllerId, id) {
     let room = this.rooms.get(id);
     if (room === undefined) {
       room = new Room(erizoControllerId, this.amqper, this.ecch, id);
-      log.info("room-status："+room.status);
-      log.info("room-erizoAgentId"+room.erizoAgentId);
       this.rooms.set(room.id, room);
       room.on('room-empty', this.deleteRoom.bind(this, id));
       this.emit('updated');
     }
     return room;
   }
+
+
 
   forEachRoom(doSomething) {
     this.rooms.forEach((room) => {

@@ -12,7 +12,7 @@ exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
     log.debug("------1");
      const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
      log.debug("------2");
-      log.debug(`message: getEA  roomid: ${room.roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+      log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
       log.debug("------3");
 
       callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});

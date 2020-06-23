@@ -114,8 +114,79 @@ class Room extends events.EventEmitter {
 
         switch (methed)
 		{
-			case 'join':
+			case 'createWebRtcTransport':
 			{
+                log.info(`messages: user:${userid} req create webrtctransport`);
+                const {
+					forceTcp,
+					producing,
+					consuming,
+					sctpCapabilities
+                } = message;
+                const webRtcTransportOptions =
+				{
+					...config.mediasoup.webRtcTransportOptions,
+					enableSctp     : Boolean(sctpCapabilities),
+					numSctpStreams : (sctpCapabilities || {}).numStreams,
+					appData        : { producing, consuming }
+                };
+                
+                if (forceTcp)
+				{
+					webRtcTransportOptions.enableUdp = false;
+					webRtcTransportOptions.enableTcp = true;
+                }
+                
+                const transport = await this._mediasoupRouter.createWebRtcTransport(webRtcTransportOptions);
+				transport.on('sctpstatechange', (sctpState) =>
+				{
+					log.debug('WebRtcTransport "sctpstatechange" event [sctpState:%s]', sctpState);
+				});
+
+				transport.on('dtlsstatechange', (dtlsState) =>
+				{
+					if (dtlsState === 'failed' || dtlsState === 'closed'){
+                        log.warn('WebRtcTransport "dtlsstatechange" event [dtlsState:%s]', dtlsState);
+                    }
+                });
+                
+                // await transport.enableTraceEvent([ 'bwe' ]);
+                // transport.on('trace', (trace) =>
+				// {
+				// 	logger.debug(
+				// 		'transport "trace" event [transportId:%s, trace.type:%s, trace:%o]',
+				// 		transport.id, trace.type, trace);
+
+				// 	if (trace.type === 'bwe' && trace.direction === 'out')
+				// 	{
+				// 		peer.notify(
+				// 			'downlinkBwe',
+				// 			{
+				// 				desiredBitrate          : trace.info.desiredBitrate,
+				// 				effectiveDesiredBitrate : trace.info.effectiveDesiredBitrate,
+				// 				availableBitrate        : trace.info.availableBitrate
+				// 			})
+				// 			.catch(() => {});
+				// 	}
+                // });
+                //store transport to client     object
+                user.addTransport(transport.id,transport);
+                
+                var  res_createwebrtctransport = {
+                    id             : transport.id,
+                    iceParameters  : transport.iceParameters,
+                    iceCandidates  : transport.iceCandidates,
+                    dtlsParameters : transport.dtlsParameters,
+                    sctpParameters : transport.sctpParameters
+                }
+                callback('callback',{retEvent:"success",data: res_createwebrtctransport });
+                const { maxIncomingBitrate } = config.mediasoup.webRtcTransportOptions;
+				if (maxIncomingBitrate)
+				{
+					try { await transport.setMaxIncomingBitrate(maxIncomingBitrate); }
+					catch (error) {}
+                }
+                
 				break;
             }
             default:

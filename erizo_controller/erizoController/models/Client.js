@@ -82,7 +82,7 @@ class Client extends events.EventEmitter {
       this.emit('disconnect');
   }
   onClientRequestCom(methed,message,callback){
-    log.info(`message: onClientRequestCom ,messgae: ${JSON.stringify(methed)} `);
+    log.info(`message: onClientRequestCom ,methed: ${JSON.stringify(methed)} `);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();

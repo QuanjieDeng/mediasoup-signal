@@ -8,6 +8,8 @@ class Client extends events.EventEmitter {
     super();
     this.room = room;
     this.id = clientid;
+    this.data = {};
+    this._transports = new Map();
   }
 
 
@@ -32,6 +34,9 @@ class Client extends events.EventEmitter {
     this.emit('disconnect');
   }
 
+  addTransport(id,transport){
+      this._transports.set(id,transport);
+  }
 
 
 

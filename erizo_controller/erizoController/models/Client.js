@@ -23,7 +23,9 @@ class Client extends events.EventEmitter {
 
   listenToSocketEvents() {
     log.debug(`message: Adding listeners to socket events, client.id: ${this.id}`);
-    this.socketEventListeners.set('getRouterRtpCapabilities', this.ongetRouterRtpCapabilities.bind(this));
+    // this.socketEventListeners.set('createWebRtcTransport', this.oncreateWebRtcTransport.bind(this));
+    this.socketEventListeners.set('getRouterRtpCapabilities', this.onClientRequestCom.bind(this,"getRouterRtpCapabilities"));
+    this.socketEventListeners.set('createWebRtcTransport', this.onClientRequestCom.bind(this,"createWebRtcTransport"));
 
     this.socketEventListeners.forEach((value, key) => {
       this.channel.socketOn(key, value);
@@ -76,33 +78,48 @@ class Client extends events.EventEmitter {
           type: 'user_disconnection',
           timestamp: timeStamp.getTime() });
       }
-      this.room.removeClient(this.id);
+      this.room.removeClient(this.id,);
       this.emit('disconnect');
   }
-
-  //
-  ongetRouterRtpCapabilities(message,callback){
-    log.info(`message: ongetRouterRtpCapabilities,messgae: ${message} `);
+  onClientRequestCom(methed,message,callback){
+    log.info(`message: onClientRequestCom ,messgae: ${JSON.stringify(methed)} `);
     if (this.room === undefined) {
-      log.error(`message: ongetRouterRtpCapabilities for user in undefined room user: ${this.user}`);
+      log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();
       return;
     }
     const rpccallback = (result) => {
-      log.info("ongetRouterRtpCapabilities  rpccallback:"+JSON.stringify(result));
+      log.info(`onClientRequestCom rpccallback:${JSON.stringify(result)}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{
-        //var roomid =   result.roomid;
-        //var agentId =   result.agentId;
-        //var ErizoAgentId =   result.ErizoAgentId;
         var retEvent =  result.retEvent;
         var  data =  result.data;
         callback(retEvent,data);
       }
     };
-    this.room.controller.processReqMessageFromClient(this.room.id, this.id, "getRouterRtpCapabilities",message.data, rpccallback.bind(this));
+    this.room.controller.processReqMessageFromClient(this.room.id, this.id, methed,message.data, rpccallback.bind(this));
   }
+  //
+  // ongetRouterRtpCapabilities(message,callback){
+  //   log.info(`message: ongetRouterRtpCapabilities,messgae: ${message} `);
+  //   if (this.room === undefined) {
+  //     log.error(`message: ongetRouterRtpCapabilities for user in undefined room user: ${this.user}`);
+  //     this.disconnect();
+  //     return;
+  //   }
+  //   const rpccallback = (result) => {
+  //     log.info("ongetRouterRtpCapabilities  rpccallback:"+JSON.stringify(result));
+  //     if(result  == "timeout"){
+  //       callback("error",{data:{}});
+  //     }else{
+  //       var retEvent =  result.retEvent;
+  //       var  data =  result.data;
+  //       callback(retEvent,data);
+  //     }
+  //   };
+  //   this.room.controller.processReqMessageFromClient(this.room.id, this.id, "getRouterRtpCapabilities",message.data, rpccallback.bind(this));
+  // }
 
 
 }

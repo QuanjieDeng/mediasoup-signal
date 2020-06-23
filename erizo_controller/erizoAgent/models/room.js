@@ -47,7 +47,9 @@ class Room extends events.EventEmitter {
 				audioLevelObserver
 			});
     }
-    
+  close(){
+    this._mediasoupRouter.close();
+  }
   getRouterId() {
     return this._mediasoupRouter.id;
   }
@@ -64,7 +66,7 @@ class Room extends events.EventEmitter {
   async createClient(clientid) {
     const room =  this;
     const client = await Client.create({ room , clientid });
-    client.on('disconnect', this.onClientDisconnected.bind(this, client));
+    client.on('disconnect', this.onClientDisconnected.bind(this));
     this.clients.set(client.id, client);
     return client;
   }
@@ -88,7 +90,7 @@ class Room extends events.EventEmitter {
 
   onClientDisconnected() {
     if (this.clients.size === 0) {
-      log.debug(`message: deleting empty room, roomId: ${this.id}`);
+      this.close();
       this.emit('room-empty');
     }
   }

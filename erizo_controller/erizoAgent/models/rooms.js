@@ -50,9 +50,12 @@ class Rooms extends events.EventEmitter {
   }
   addRoom(id,room) {
     this.rooms.set(id, room);
+    this.emit('updated');
+    room.on('room-empty', this.deleteRoom.bind(this, id));
   }
 
   deleteRoom(id) {
+    log.info("message: delete room:",id);
     if (this.rooms.delete(id)) {
       this.emit('updated');
     }

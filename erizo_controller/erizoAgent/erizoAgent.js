@@ -171,6 +171,12 @@ run();
 
 async function run()
 {
+  rooms.on('updated', function(){
+    let nRooms = 0;
+    nRooms = rooms.size();
+    log.debug('message: Updating my state,  rooms:', nRooms);
+
+  });
 	// Run a mediasoup Worker.
   await  wm.runMediasoupWorkers();
   
@@ -202,7 +208,7 @@ exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
 		room = await Room.create({ roomid,amqper,erizoControllerid,mediasoupWorker });
 
     rooms.addRoom(roomid, room);
-    room.on('room-empty', function(){});
+    
 	}
 
 	return room;

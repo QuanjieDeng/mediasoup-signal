@@ -81,8 +81,12 @@ exports.RoomController = (spec) => {
     amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
   };
 
-  that.removeClient = (clientId) => {
+  //通知EA删除用户
+  that.removeClient = (roomid,clientId) => {
     log.info(`message: removeClient clientId ${clientId}`);
+    const args = [roomid, clientId];
+    var   agentid = `ErizoAgent_${erizoAgentId}`;
+    amqper.callRpc(agentid, 'deleteUser', args);
   };
 
   return that;

@@ -10,7 +10,7 @@ const rooms =  erizoAgent.getRooms();
 exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
   try {
     const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
-    log.debug(`message: getEA  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+    log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
     callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
   } catch (error) {
     log.error('message: error  getEA, error:', error);
@@ -37,14 +37,22 @@ exports.handleUserRequest=(roomid,userid,methed,message,callback)=>{
 };
 
 //用户离开房间-断开连接，或者其他的原因等等
-exports.deleteUser =  (roomid,userid,callback)=>{
-  try {
-    //找到room，交给room去处理
-    log.debug(`message: deleteUser  roomid: ${roomid} userid:${userid} agentId: ${myErizoAgentId}`);
-    // callback('callback',{ roomid: roomid, agentId: myErizoAgentId});
-  } catch (error) {
-    log.error('message: error deleteUser, error:', error);
-  }
+exports.deleteUser =  (roomid,userid)=>{
+  // try {
+    log.debug(`message: deleteUser  roomid: ${roomid} userid:${userid}`);
+    const room =   rooms.getRoomById(roomid);
+    if(!room){
+      log.error(`messages: handleUserRequest can't  get  room by-roomid:${roomid}`);
+      return;
+    }
+    const  user =   room.getClientById(userid);
+    if(user){
+      user.close();
+    }
+
+  // } catch (error) {
+  //   log.error('message: error deleteUser, error:', error);
+  // }
 };
 
 exports.rovMessage=  (args, callback) => {

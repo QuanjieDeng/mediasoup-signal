@@ -90,7 +90,7 @@ exports.EcCloudHandler = (spec) => {
       const agentId = resp.agentId;
       const routerId = resp.routerId;
       if (resp === 'timeout') {
-        tryAgain((count += 1), callback);
+        getMeiasoupWorkerTryAgain((count += 1), callback);
       } else {
         callback(roomid, agentId, routerId);
       }

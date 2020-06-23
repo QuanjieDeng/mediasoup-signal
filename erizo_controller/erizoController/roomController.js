@@ -75,8 +75,8 @@ exports.RoomController = (spec) => {
 
 
   //就是对客户端的消息进行转发到EA 
-  that.processReqMessageFromClient = (roomid, clientId, msg, callback) => {
-    const args = [roomid, clientId, msg];
+  that.processReqMessageFromClient = (roomid, clientId,methed,msg, callback) => {
+    const args = [roomid, clientId,methed, msg];
     var   agentid = `ErizoAgent_${erizoAgentId}`;
     amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
   };

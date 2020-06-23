@@ -13,7 +13,7 @@ EA rpc接口文档
 {
     roomid: roomid,  //房间ID
     agentId: ErizoAgentId, EA的ID
-    workerId:workerId  //对应的workerId
+    routerId:routerId  //对应的routerId
 }
 ```
 
@@ -29,11 +29,22 @@ EA rpc接口文档
 
 ### 返回参数 
 ```
-{ 
-  roomid: roomid,
-  userid: userid,
-  agentId: myErizoAgentId,
-  data:{}
+//成功
+{
+  retEvent:"success",
+  data: {
+    
+  }
+}
+
+//失败
+{
+  retEvent:"error",
+  data: {
+      errmsg:"can't find room",
+      errcode:1002
+    }
+  }
 }
 ```
 

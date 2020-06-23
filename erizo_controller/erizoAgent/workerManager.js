@@ -3,7 +3,7 @@ workermanager.js 负责woker的创建，消除，负载分配
 */
 const erizoAgent = require('./erizoAgent');
 const logger = require('./../common/logger').logger;
-const log = logger.getLogger('ErizoAgent');
+const log = logger.getLogger('ErizoAgent-WM');
 const mediasoup = require('mediasoup');
 const config = require('./../../licode_config');
 
@@ -51,7 +51,6 @@ exports.WorkerManager = (spec) => {
   };
 
   that.getMediasoupWorker= () =>{
-      log.info("getMediasoupWorker  list's  len:"+mediasoupWorkers.length);
       const worker = mediasoupWorkers[nextMediasoupWorkerIdx];
       if (++nextMediasoupWorkerIdx === mediasoupWorkers.length)
           nextMediasoupWorkerIdx = 0;

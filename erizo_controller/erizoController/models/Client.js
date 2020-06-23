@@ -90,15 +90,18 @@ class Client extends events.EventEmitter {
     }
     const rpccallback = (result) => {
       log.info("ongetRouterRtpCapabilities  rpccallback:"+JSON.stringify(result));
-      var roomid =   result.roomid;
-      var agentId =   result.agentId;
-      var ErizoAgentId =   result.ErizoAgentId;
-      var retEvent =  result.retEvent;
-      var  data =  result.data;
-      callback(retEvent,data);
-
+      if(result  == "timeout"){
+        callback("error",{data:{}});
+      }else{
+        //var roomid =   result.roomid;
+        //var agentId =   result.agentId;
+        //var ErizoAgentId =   result.ErizoAgentId;
+        var retEvent =  result.retEvent;
+        var  data =  result.data;
+        callback(retEvent,data);
+      }
     };
-    this.room.controller.processReqMessageFromClient(this.room.id, this.id, message.data, rpccallback.bind(this));
+    this.room.controller.processReqMessageFromClient(this.room.id, this.id, "getRouterRtpCapabilities",message.data, rpccallback.bind(this));
   }
 
 

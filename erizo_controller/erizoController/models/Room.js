@@ -1,13 +1,13 @@
 
 const events = require('events');
-const controller = require('../roomController');
+// const controller = require('../roomController').RoomController;
 const Client = require('./Client').Client;
 const logger = require('./../../common/logger').logger;
 
 const log = logger.getLogger('ErizoController - Room');
 
 class Room extends events.EventEmitter {
-  constructor(erizoControllerId, amqper, ecch, id) {
+  constructor({erizoControllerId, amqper, ecch, id}) {
     super();
     this.clients = new Map();
     this.id = id;
@@ -21,13 +21,11 @@ class Room extends events.EventEmitter {
 
   init(){
     //申请分配EA
-    const rpccallback = (roomid, agentId, routerId) => {
+    const rpccallback =async (roomid, agentId, routerId) => {
       if(roomid != "timeout"){
         this.status = "run";
         this.erizoAgentId =   agentId;
         this.routerId = routerId;
-        this.setupRoomController();
-        
       }else{
         log.error(`message: Room：${id} can't get mediaosupworker!`);
         this.status = "error";
@@ -37,6 +35,30 @@ class Room extends events.EventEmitter {
     this.ecch.getMeiasoupWorker(this.id,this.erizoControllerId,rpccallback);
   }
 
+
+  static async create({ erizoControllerId, amqper, ecch, id}){
+		log.info('create() [roomId:%s]', id);
+		return new Room(
+			{
+				erizoControllerId,
+        amqper,
+        ecch,
+				id
+			});
+    }
+
+  getClientList(){
+    const  client_list = [];
+    this.clients.forEach(function(v,k){
+      var  user = {
+        id          : v.id,
+        displayName : v.displayName,
+        device      : v.device
+      }
+      client_list.push(user);
+    })
+    return client_list;
+  }
   hasClientWithId(id) {
     return this.clients.has(id);
   }
@@ -59,9 +81,7 @@ class Room extends events.EventEmitter {
   }
 
   removeClient(id) {
-    if (this.controller) {
-      this.controller.removeClient(this.id,id);
-    }
+    this.removeClientEA(this.id,id);
     return this.clients.delete(id);
   }
 
@@ -69,29 +89,6 @@ class Room extends events.EventEmitter {
     if (this.clients.size === 0) {
       log.debug(`message: deleting empty room, roomId: ${this.id}`);
       this.emit('room-empty');
-    }
-  }
-
-  setupRoomController() {
-    this.controller = controller.RoomController({
-      amqper: this.amqper,
-      ecch: this.ecch,
-      erizoControllerId: this.erizoControllerId,
-      erizoAgentId: this.erizoAgentId,
-    });
-    this.controller.addEventListener(this.onRoomControllerEvent.bind(this));
-    this.emit('room-inited');
-  }
-
-  onRoomControllerEvent(type, evt) {
-    if (type === 'unpublish') {
-      // It's supposed to be an integer.
-      const streamId = parseInt(evt, 10);
-      log.warn('message: Triggering removal of stream ' +
-                 'because of ErizoJS timeout, ' +
-                 `streamId: ${streamId}`);
-      this.sendMessage('onRemoveStream', { id: streamId });
-      // remove clients and streams?
     }
   }
 
@@ -113,6 +110,23 @@ class Room extends events.EventEmitter {
       client.sendMessage(method, args);
     });
   }
+
+
+  //就是对客户端的消息进行转发到EA 
+  processReqMessageFromClient (roomid, clientId,methed,msg, callback){
+    const args = [roomid, clientId,methed, msg];
+    var   agentid = `ErizoAgent_${this.erizoAgentId}`;
+    this.amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
+  };
+
+  //通知EA删除用户
+  removeClientEA(roomid,clientId){
+    log.info(`message: removeClient clientId ${clientId}`);
+    const args = [roomid, clientId];
+    var   agentid = `ErizoAgent_${this.erizoAgentId}`;
+    this.amqper.callRpc(agentid, 'deleteUser', args);
+  };
+
 }
 
 class Rooms extends events.EventEmitter {
@@ -127,10 +141,12 @@ class Rooms extends events.EventEmitter {
     return this.rooms.size;
   }
 
-getOrCreateRoom(erizoControllerId, id) {
+  async getOrCreateRoom(erizoControllerId, id) {
     let room = this.rooms.get(id);
     if (room === undefined) {
-      room = new Room(erizoControllerId, this.amqper, this.ecch, id);
+      const  amqper =  this.amqper;
+      const  ecch =  this.ecch;
+      room =await Room.create({erizoControllerId, amqper, ecch, id});
       this.rooms.set(room.id, room);
       room.on('room-empty', this.deleteRoom.bind(this, id));
       this.emit('updated');

@@ -301,28 +301,26 @@ const listen =  () => {
 
     const channel = new Channel(socket, nuve);
 
-    channel.on('connected', (token, options, callback) => {
+    channel.on('connected',async (token, options, callback) => {
       options = options || {};
       try {
-        const room =  rooms.getOrCreateRoom(myId, token.room);
-        room.on('room-inited',function(id){
-          const client =  room.createClient(channel, token, options);
-          log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
-          if (global.config.erizoController.report.session_events) {
-            const timeStamp = new Date();
-            amqper.broadcast('event', { room: room.id,
-              user: client.id,
-              name: token.userName,
-              type: 'user_connection',
-              timestamp: timeStamp.getTime() });
-          }
-          callback('success', {
-            roomId: room.id,
-            clientId: client.id });
-        });
-
+        const room =  await rooms.getOrCreateRoom(myId, token.room);
+        const client =  room.createClient(channel, token, options);
+        log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
+        if (global.config.erizoController.report.session_events) {
+          const timeStamp = new Date();
+          amqper.broadcast('event', { room: room.id,
+            user: client.id,
+            name: token.userName,
+            type: 'user_connection',
+            timestamp: timeStamp.getTime() });
+        }
+        callback('success', {
+          roomId: room.id,
+          clientId: client.id });
+          
       } catch (e) {
-        log.warn('message: error creating Room or Client, error:', e);
+        log.info('message: error creating Room or Client, error:', e);
       }
     });
 

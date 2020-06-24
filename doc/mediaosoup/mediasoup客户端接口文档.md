@@ -4,13 +4,13 @@
 
 [请求类EVENT事件](#请求类event事件)
 
- [token](#token)
+ [token--ok](#token)
 
- [getRouterRtpCapabilities](#getRouterRtpCapabilities)
+ [getRouterRtpCapabilities--ok](#getRouterRtpCapabilities)
 
- [createWebRtcTransport](#createWebRtcTransport)
+ [createWebRtcTransport--ok](#createWebRtcTransport)
 
- [join](#join)
+ [join-ok](#join)
 
  [connectWebRtcTransport](#connectWebRtcTransport)
 
@@ -960,6 +960,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	}
 }
 ```
+- callback
 #### 客户端行为
 - 客户端收到此消息表明，服务器已经创建好consumer,客户端需要调用revTransport.consume 创建本地的consume
 ```

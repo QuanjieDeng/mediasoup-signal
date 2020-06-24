@@ -10,6 +10,10 @@ class Client extends events.EventEmitter {
     this.id = clientid;
     this.data = {};
     this._transports = new Map();
+    this._producers =   new Map();
+    this._consumers =  new Map();
+    this._dataProducers = new Map();
+    this._dataConsumers = new Map();
   }
 
 
@@ -38,6 +42,19 @@ class Client extends events.EventEmitter {
       this._transports.set(id,transport);
   }
 
+  //发送到远端的通知消息
+  async notify(methed,msg){
+    this.room.sendMsgToClient(methed,msg,function(){
+      //nothing to do
+    });
+  }
+
+  //发送到远端的请求消息
+  async request(methed,msg){
+    await this.room.sendMsgToClient(methed,msg,function(ret,result){
+      log.info(`request callback: ret:${ret} result:${JSON.stringify(result)}`);
+    });
+  }
 
 
 }

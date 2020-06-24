@@ -7,41 +7,23 @@ const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('ErizoController - Room');
 
 class Room extends events.EventEmitter {
-  constructor({erizoControllerId, amqper, ecch, id}) {
+  constructor({erizoControllerId, amqper,agentId, ecch, id}) {
     super();
     this.clients = new Map();
     this.id = id;
     this.erizoControllerId = erizoControllerId;
     this.amqper = amqper;
     this.ecch = ecch;
-    this.status = "start";   //start---run---error
-    this.init();
+    this.erizoAgentId = agentId;
   }
 
-
-  init(){
-    //申请分配EA
-    const rpccallback =async (roomid, agentId, routerId) => {
-      if(roomid != "timeout"){
-        this.status = "run";
-        this.erizoAgentId =   agentId;
-        this.routerId = routerId;
-      }else{
-        log.error(`message: Room：${id} can't get mediaosupworker!`);
-        this.status = "error";
-      }
-    };
-
-    this.ecch.getMeiasoupWorker(this.id,this.erizoControllerId,rpccallback);
-  }
-
-
-  static async create({ erizoControllerId, amqper, ecch, id}){
+  static async create({ erizoControllerId, amqper,agentId, ecch, id}){
 		log.info('create() [roomId:%s]', id);
 		return new Room(
 			{
 				erizoControllerId,
         amqper,
+        agentId,
         ecch,
 				id
 			});
@@ -67,8 +49,9 @@ class Room extends events.EventEmitter {
     return this.clients.get(id);
   }
 
-  createClient(channel, token, options) {
-    const client = new Client(channel, token, options, this);
+  async createClient(channel, token, options) {
+    const room = this;
+    const client = await Client.create({channel, token, options, room});
     client.on('disconnect', this.onClientDisconnected.bind(this, client));
     this.clients.set(client.id, client);
     return client;
@@ -114,6 +97,7 @@ class Room extends events.EventEmitter {
 
   //就是对客户端的消息进行转发到EA 
   processReqMessageFromClient (roomid, clientId,methed,msg, callback){
+
     const args = [roomid, clientId,methed, msg];
     var   agentid = `ErizoAgent_${this.erizoAgentId}`;
     this.amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
@@ -141,12 +125,12 @@ class Rooms extends events.EventEmitter {
     return this.rooms.size;
   }
 
-  async getOrCreateRoom(erizoControllerId, id) {
+  async getOrCreateRoom(erizoControllerId, agentId,id) {
     let room = this.rooms.get(id);
     if (room === undefined) {
       const  amqper =  this.amqper;
       const  ecch =  this.ecch;
-      room =await Room.create({erizoControllerId, amqper, ecch, id});
+      room =await Room.create({erizoControllerId,agentId, amqper, ecch, id});
       this.rooms.set(room.id, room);
       room.on('room-empty', this.deleteRoom.bind(this, id));
       this.emit('updated');

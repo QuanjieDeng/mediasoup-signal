@@ -304,21 +304,24 @@ const listen =  () => {
     channel.on('connected',async (token, options, callback) => {
       options = options || {};
       try {
-        const room =  await rooms.getOrCreateRoom(myId, token.room);
-        const client =  room.createClient(channel, token, options);
-        log.info(`message: client connected, clientId: ${client.id}, room.id:${room.id} `);
-        if (global.config.erizoController.report.session_events) {
-          const timeStamp = new Date();
-          amqper.broadcast('event', { room: room.id,
-            user: client.id,
-            name: token.userName,
-            type: 'user_connection',
-            timestamp: timeStamp.getTime() });
-        }
-        callback('success', {
-          roomId: room.id,
-          clientId: client.id });
-          
+        const rpccallback = async(roomid, agentId, routerId) => {
+          if(roomid != "timeout"){
+            log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
+
+            const room =  await rooms.getOrCreateRoom(myId,agentId, token.room);
+            const client = await room.createClient(channel, token, options);
+            callback('success', {
+              roomId: room.id,
+              clientId: client.id });
+          }else{
+            log.error(`message: Room：${id} can't get mediaosupworker!`);
+            callback('error', {
+              errmsg: "get mediasoup worker failed",
+              errcode:1002
+            });
+          }
+        };
+        ecch.getMeiasoupWorker(token.room,myId,rpccallback);
       } catch (e) {
         log.info('message: error creating Room or Client, error:', e);
       }

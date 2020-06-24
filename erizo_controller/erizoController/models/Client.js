@@ -9,7 +9,7 @@ const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('ErizoController - Client');
 
 class Client extends events.EventEmitter {
-  constructor(channel, token, options, room) {
+  constructor({channel, token, options, room}) {
     super();
     this.channel = channel;
     this.room = room;
@@ -21,6 +21,19 @@ class Client extends events.EventEmitter {
     this.user = { name: token.userName, role: token.role };
     this.state = 'sleeping'; // ?
   }
+
+  static async create({ channel, token, options, room}){
+		log.info('create() [client]');
+		return new Client(
+			{
+				channel,
+        token,
+        options,
+				room
+			});
+    }
+
+
 
   listenToSocketEvents() {
     log.debug(`message: Adding listeners to socket events, client.id: ${this.id}`);
@@ -117,7 +130,7 @@ class Client extends events.EventEmitter {
 
   onJoin(message,callback){
     log.info(`message: user:${this.id} req  join room`);
-    log.info(`messages: user's name:${JSON.stringify(message.data)}`);
+    // log.info(`messages: user's name:${JSON.stringify(message.data)}`);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();

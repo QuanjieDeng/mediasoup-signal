@@ -1,5 +1,6 @@
 
 const events = require('events');
+const { cli } = require('winston/lib/winston/config');
 // const controller = require('../roomController').RoomController;
 const Client = require('./Client').Client;
 const logger = require('./../../common/logger').logger;
@@ -80,6 +81,8 @@ class Room extends events.EventEmitter {
     const client = this.getClientById(clientId);
     if (client) {
       client.sendMessageSync(methed,msg,callback);
+    }else{
+      log.error(`message: sendSingleMessageToClient can't  get client  by clientid:${clientId}`);
     }
   }
 

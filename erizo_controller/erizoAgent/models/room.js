@@ -1,25 +1,29 @@
 
 const events = require('events');
 const Client = require('./client').Client;
+const throttle = require('@sitespeed.io/throttle');
 const config =  require('../../../licode_config');
 const { cli } = require('winston/lib/winston/config');
 const { threadId } = require('worker_threads');
+const { use } = require('chai');
+const { useFakeTimers } = require('sinon');
 const logger = require('./../../common/logger').logger;
 
 const log = logger.getLogger('ErizoAgent-Room');
 
 class Room extends events.EventEmitter {
-  constructor({id,erizoControllerId, amqper,mediasoupRouter,audioLevelObserver}) {
+  constructor({roomid,erizoControllerid, amqper,mediasoupRouter,audioLevelObserver}) {
     super();
     this.clients = new Map();
-    this.id = id;
-    this.erizoControllerId = erizoControllerId;
+    this.id = roomid;
+    this.erizoControllerId = erizoControllerid;
     this.amqper = amqper;
     this._mediasoupRouter = mediasoupRouter;
     this._audioLevelObserver = audioLevelObserver;
     this._networkThrottled = false;
     global.audioLevelObserver = this._audioLevelObserver;
-    log.info("Room构造函数");
+	log.info(`Room构造函数 erizoControllerId:${this.erizoControllerId} id:${this.id}`);
+	
   }
 
 
@@ -95,10 +99,10 @@ class Room extends events.EventEmitter {
     }
   }
 
-  async   sendMsgToClient(methed,msg,callback)
+  async   sendMsgToClient(clientId,methed,msg,callback)
   {
     const rpccallback = (result) => {
-      log.info(`sendMsgToClient rpccallback:${JSON.stringify(result)}`);
+      log.info(`sendMsgToClient rpccallback:${JSON.stringify(result)} methed:${methed} clientid:${clientId}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{
@@ -107,10 +111,23 @@ class Room extends events.EventEmitter {
     };
 
     const args = [clientId,msg,methed];
-    var   ec_id = `erizoController_${this.erizoControllerId}`;
-    amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
+	var   ec_id = `erizoController_${this.erizoControllerId}`;
+	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
+	
+    await this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
   }
 
+  async   sendNotifyMsgToClient(clientId,methed,msg)
+  {
+	log.info(`sendNotifyMsgToClient  methed:${methed} clientid:${clientId} msg:${JSON.stringify(msg)}`);
+    const rpccallback = (result) => {
+    };
+    const args = [clientId,msg,methed];
+	var   ec_id = `erizoController_${this.erizoControllerId}`;
+	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
+	
+    this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
+  }
 
 	async _createDataConsumer(
 		{
@@ -198,6 +215,7 @@ class Room extends events.EventEmitter {
 
 	async _createConsumer({ consumerPeer, producerPeer, producer })
 	{
+		log.info(`message: createConsumer consumerPeer:${consumerPeer.getid()} producerPeer:${producerPeer.getid()} producer:${producer.id}`);
 		// Optimization:
 		// - Create the server-side Consumer in paused mode.
 		// - Tell its Peer about it and wait for its response.
@@ -220,6 +238,7 @@ class Room extends events.EventEmitter {
 				})
 		)
 		{
+			log.debug(`message: createConsumer consumerPeer:${consumerPeer.getid()} producerPeer:${producerPeer.getid()} producer:${producer.id} can't comsume it`);
 			return;
 		}
 
@@ -335,6 +354,7 @@ class Room extends events.EventEmitter {
 			// the Consumer so the remote endpoint will receive the a first RTP packet
 			// of this new stream once its PeerConnection is already ready to process
 			// and associate it.
+			log.info(`messages resume consumer:${consumer.id}`);
 			await consumer.resume();
 
 			consumerPeer.notify(
@@ -375,133 +395,593 @@ class Room extends events.EventEmitter {
         switch (methed)
         {
           case 'createWebRtcTransport':
-          {
-            log.info(`messages: user:${userid} req create webrtctransport`);
-            const {
-              forceTcp,
-              producing,
-              consuming,
-              sctpCapabilities
-            } = message;
-            const webRtcTransportOptions =
-            {
-              ...config.mediasoup.webRtcTransportOptions,
-              enableSctp     : Boolean(sctpCapabilities),
-              numSctpStreams : (sctpCapabilities || {}).numStreams,
-              appData        : { producing, consuming }
-            };
-                    
-            if (forceTcp)
-            {
-              webRtcTransportOptions.enableUdp = false;
-              webRtcTransportOptions.enableTcp = true;
-            }
-                    
-            const transport = await this._mediasoupRouter.createWebRtcTransport(webRtcTransportOptions);
-            transport.on('sctpstatechange', (sctpState) =>
-            {
-              log.debug('WebRtcTransport "sctpstatechange" event [sctpState:%s]', sctpState);
-            });
+			{
+				log.info(`messages: user:${userid} req create webrtctransport`);
+				const {
+				forceTcp,
+				producing,
+				consuming,
+				sctpCapabilities
+				} = message;
+				const webRtcTransportOptions =
+				{
+				...config.mediasoup.webRtcTransportOptions,
+				enableSctp     : Boolean(sctpCapabilities),
+				numSctpStreams : (sctpCapabilities || {}).numStreams,
+				appData        : { producing, consuming }
+				};
+						
+				if (forceTcp)
+				{
+				webRtcTransportOptions.enableUdp = false;
+				webRtcTransportOptions.enableTcp = true;
+				}
+						
+				const transport = await this._mediasoupRouter.createWebRtcTransport(webRtcTransportOptions);
+				transport.on('sctpstatechange', (sctpState) =>
+				{
+				log.debug('WebRtcTransport "sctpstatechange" event [sctpState:%s]', sctpState);
+				});
 
-            transport.on('dtlsstatechange', (dtlsState) =>
-            {
-              if (dtlsState === 'failed' || dtlsState === 'closed'){
-                log.warn('WebRtcTransport "dtlsstatechange" event [dtlsState:%s]', dtlsState);
-              }
-            });
-                    
-            // await transport.enableTraceEvent([ 'bwe' ]);
-            // transport.on('trace', (trace) =>
-            // {
-            // 	logger.debug(
-            // 		'transport "trace" event [transportId:%s, trace.type:%s, trace:%o]',
-            // 		transport.id, trace.type, trace);
+				transport.on('dtlsstatechange', (dtlsState) =>
+				{
+				if (dtlsState === 'failed' || dtlsState === 'closed'){
+					log.warn('WebRtcTransport "dtlsstatechange" event [dtlsState:%s]', dtlsState);
+				}
+				});
+						
+				// await transport.enableTraceEvent([ 'bwe' ]);
+				// transport.on('trace', (trace) =>
+				// {
+				// 	logger.debug(
+				// 		'transport "trace" event [transportId:%s, trace.type:%s, trace:%o]',
+				// 		transport.id, trace.type, trace);
 
-            // 	if (trace.type === 'bwe' && trace.direction === 'out')
-            // 	{
-            // 		peer.notify(
-            // 			'downlinkBwe',
-            // 			{
-            // 				desiredBitrate          : trace.info.desiredBitrate,
-            // 				effectiveDesiredBitrate : trace.info.effectiveDesiredBitrate,
-            // 				availableBitrate        : trace.info.availableBitrate
-            // 			})
-            // 			.catch(() => {});
-            // 	}
-            // });
-            //store transport to client     object
-            user.addTransport(transport.id,transport);
-            
-            var  res_createwebrtctransport = {
-              data:{
-                id             : transport.id,
-                iceParameters  : transport.iceParameters,
-                iceCandidates  : transport.iceCandidates,
-                dtlsParameters : transport.dtlsParameters,
-                sctpParameters : transport.sctpParameters
-              }
-            }
-            callback('callback',{retEvent:"success",data: res_createwebrtctransport });
-            const { maxIncomingBitrate } = config.mediasoup.webRtcTransportOptions;
-            if (maxIncomingBitrate)
-            {
-              try { await transport.setMaxIncomingBitrate(maxIncomingBitrate); }
-              catch (error) {}
-            }
-                    
-            break;
-          }
+				// 	if (trace.type === 'bwe' && trace.direction === 'out')
+				// 	{
+				// 		peer.notify(
+				// 			'downlinkBwe',
+				// 			{
+				// 				desiredBitrate          : trace.info.desiredBitrate,
+				// 				effectiveDesiredBitrate : trace.info.effectiveDesiredBitrate,
+				// 				availableBitrate        : trace.info.availableBitrate
+				// 			})
+				// 			.catch(() => {});
+				// 	}
+				// });
+				//store transport to client     object
+				user.addTransport(transport.id,transport);
+				
+				var  res_createwebrtctransport = {
+				data:{
+					id             : transport.id,
+					iceParameters  : transport.iceParameters,
+					iceCandidates  : transport.iceCandidates,
+					dtlsParameters : transport.dtlsParameters,
+					sctpParameters : transport.sctpParameters
+				}
+				}
+				callback('callback',{retEvent:"success",data: res_createwebrtctransport });
+				const { maxIncomingBitrate } = config.mediasoup.webRtcTransportOptions;
+				if (maxIncomingBitrate)
+				{
+				try { await transport.setMaxIncomingBitrate(maxIncomingBitrate); }
+				catch (error) {}
+				}
+						
+				break;
+			}
           case 'join':
-          {
-            log.info(`message: user:${userid} req  join room`);
-            if (user.joined)
-              throw new Error('Peer already joined');
-            
-            const {
-              displayName,
-              device,
-              rtpCapabilities,
-              sctpCapabilities
-            } = message;
-            user.joined =  true;
-            user.rtpCapabilities = rtpCapabilities;
-            user.sctpCapabilities = sctpCapabilities;
-            callback('callback',{retEvent:"success",data: {data:{}} });
+			{
+				log.info(`message: user:${userid} req  join room`);
+				if (user.joined)
+				throw new Error('Peer already joined');
+				
+				const {
+				displayName,
+				device,
+				rtpCapabilities,
+				sctpCapabilities
+				} = message;
+				user.joined =  true;
+				user.rtpCapabilities = rtpCapabilities;
+				user.sctpCapabilities = sctpCapabilities;
+				callback('callback',{retEvent:"success",data: {data:{}} });
+				log.info(`message: user:${userid}   joined:${user.joined}`);
 
-            //对房间内的所有的producer，为该用户创建consume
-            this.forEachClient(function(joinedPeer){
-              if(!joinedPeer.joined)
-                return;
-              //音视频
-              for(const producer of joinedPeer._producers.values())
-              {
-                this._createConsumer(
-                  {
-                    consumerPeer : user,
-                    producerPeer : joinedPeer,
-                    producer
-                  });
-              }
-              //文字消息
-              for (const dataProducer of joinedPeer._dataProducers.values())
-              {
-                this._createDataConsumer(
-                  {
-                    dataConsumerPeer : user,
-                    dataProducerPeer : joinedPeer,
-                    dataProducer
-                  });
-              }
-    
-            });
+				//对房间内的所有的producer，为该用户创建consume
+				this.forEachClient((joinedPeer)=>{
+					if(!joinedPeer.joined)
+						return;
+					//音视频
+					for(const producer of joinedPeer._producers.values())
+					{
+						this._createConsumer(
+						{
+							consumerPeer : user,
+							producerPeer : joinedPeer,
+							producer
+						});
+					}
+					//文字消息
+					for (const dataProducer of joinedPeer._dataProducers.values())
+					{
+						this._createDataConsumer(
+						{
+							dataConsumerPeer : user,
+							dataProducerPeer : joinedPeer,
+							dataProducer
+						});
+					}
+		
+				});
 
-            break;
-          }
-          default:
-          {
-              log.error(`unknown request.method：${method}`);
-              callback('callback',{retEvent:"error",data: {errmsg:"unknown request.method", errcode:1004}});
-          }
+				break;
+			}
+		    case 'connectWebRtcTransport':
+				{
+					log.info(`message user:${userid} req connectWebRtcTransport`);
+					const { transportId, dtlsParameters } = message;
+					const transport = user._transports.get(transportId);
+
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+
+					await transport.connect({ dtlsParameters });
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+
+					break;
+				}
+		    case 'produce':
+			  	{
+					log.info(`message user:${userid} req produce`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { transportId, kind, rtpParameters } =  message;
+					let { appData } = message;
+					const transport =  user._transports.get(transportId);
+
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+
+					// Add peerId into appData to later get the associated Peer during
+					// the 'loudest' event of the audioLevelObserver.
+					appData = { ...appData, peerId: user.getid() };
+
+					const producer = await transport.produce(
+						{
+							kind,
+							rtpParameters,
+							appData
+							// keyFrameRequestDelay: 5000
+						});
+
+					// Store the Producer into the protoo Peer data Object.
+					user._producers.set(producer.id, producer);
+
+					// Set Producer events.
+					producer.on('score', (score) =>
+					{
+						user.notify('producerScore', { producerId: producer.id, score })
+							.catch(() => {});
+					});
+
+					producer.on('videoorientationchange', (videoOrientation) =>
+					{
+						log.debug(
+							'producer "videoorientationchange" event [producerId:%s, videoOrientation:%o]',
+							producer.id, videoOrientation);
+					});
+
+					var  res = {
+						data:{
+							id: producer.id
+						}
+					}
+					callback('callback',{retEvent:"success",data: res});
+
+					// Optimization: Create a server-side Consumer for each Peer.
+					this.forEachClient((joinedPeer)=>{
+						if(!joinedPeer.joined)
+							return;
+						if(joinedPeer.getid()== user.getid()){
+							return;
+						}
+
+						this._createConsumer(
+							{
+								consumerPeer : joinedPeer,
+								producerPeer : user,
+								producer
+							});
+			
+					});
+					// Add into the audioLevelObserver.
+					if (producer.kind === 'audio')
+					{
+						this._audioLevelObserver.addProducer({ producerId: producer.id })
+							.catch(() => {});
+					}
+
+					break;
+			   }
+			case 'closeProducer':
+				{
+					log.info(`message user:${userid} req closeProducer`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { producerId } =   message;
+					const producer = user._producers.get(producerId);
+
+					if (!producer)
+						throw new Error(`producer with id "${producerId}" not found`);
+
+					producer.close();
+
+					// Remove from its map.
+					user._producers.delete(producer.id);
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+
+					break;
+				}
+			case 'pauseProducer':
+				{
+					log.info(`message user:${userid} req pauseProducer`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { producerId } =   message;
+					const producer = user._producers.get(producerId);
+
+					if (!producer)
+						throw new Error(`producer with id "${producerId}" not found`);
+
+					await producer.pause();
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+					break;
+				}
+			case 'resumeProducer':
+				{
+					log.info(`message user:${userid} req resumeProducer`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { producerId } =  message;
+					const producer = peer._producers.get(producerId);
+
+					if (!producer)
+						throw new Error(`producer with id "${producerId}" not found`);
+
+					await producer.resume();
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+
+					break;
+				}
+			case 'pauseConsumer':
+				{
+					log.info(`message user:${userid} req pauseConsumer`);
+					// Ensure the Peer is joined.
+					if (!user._joined)
+						throw new Error('Peer not yet joined');
+	
+					const { consumerId } =   message;
+					const consumer =   user._consumers.get(consumerId);
+	
+					if (!consumer)
+						throw new Error(`consumer with id "${consumerId}" not found`);
+	
+					await consumer.pause();
+	
+					callback('callback',{retEvent:"success",data: {data:{}}});
+	
+					break;
+				}
+	
+			case 'resumeConsumer':
+				{
+					log.info(`message user:${userid} req resumeConsumer`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { consumerId } =   message;
+					const consumer =   user._consumers.get(consumerId);
+
+					if (!consumer)
+						throw new Error(`consumer with id "${consumerId}" not found`);
+
+					await consumer.resume();
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+
+					break;
+				}
+			case 'setConsumerPreferredLayers':
+				{
+					log.info(`message user:${userid} req setConsumerPreferredLayers`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+	
+					const { consumerId, spatialLayer, temporalLayer } =  message;
+					const consumer =  user._consumers.get(consumerId);
+	
+					if (!consumer)
+						throw new Error(`consumer with id "${consumerId}" not found`);
+	
+					await consumer.setPreferredLayers({ spatialLayer, temporalLayer });
+	
+					callback('callback',{retEvent:"success",data: {data:{}}});
+	
+					break;
+				}
+	
+			case 'setConsumerPriority':
+				{
+					log.info(`message user:${userid} req setConsumerPriority`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+
+					const { consumerId, priority } =  message;
+					const consumer = peer.data.consumers.get(consumerId);
+
+					if (!consumer)
+						throw new Error(`consumer with id "${consumerId}" not found`);
+
+					await consumer.setPriority(priority);
+
+					callback('callback',{retEvent:"success",data: {data:{}}});
+
+					break;
+				}
+			case 'requestConsumerKeyFrame':
+				{
+					log.info(`message user:${userid} req requestConsumerKeyFrame`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+	
+					const { consumerId } =  message;
+					const consumer = user._consumers.get(consumerId);
+	
+					if (!consumer)
+						throw new Error(`consumer with id "${consumerId}" not found`);
+	
+					await consumer.requestKeyFrame();
+	
+					callback('callback',{retEvent:"success",data: {data:{}}});
+	
+					break;
+				}
+			case 'produceData':
+				{
+					log.info(`message user:${userid} req produceData`);
+					// Ensure the Peer is joined.
+					if (!user.joined)
+						throw new Error('Peer not yet joined');
+	
+					const {
+						transportId,
+						sctpStreamParameters,
+						label,
+						protocol,
+						appData
+					} = message;
+	
+					const transport = user._transports.get(transportId);
+	
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+	
+					const dataProducer = await transport.produceData(
+						{
+							sctpStreamParameters,
+							label,
+							protocol,
+							appData
+						});
+	
+					// Store the Producer into the protoo Peer data Object.
+					user._dataProducers.set(dataProducer.id, dataProducer);
+	
+					var resp = {
+						data:{
+							id: dataProducer.id
+						}
+
+					}
+					callback('callback',{retEvent:"success",data:resp});
+	
+					switch (dataProducer.label)
+					{
+						case 'chat':
+						{
+							// Create a server-side DataConsumer for each Peer.
+							//TODO
+							// for (const otherPeer of this._getJoinedPeers({ excludePeer: peer }))
+							// {
+							// 	this._createDataConsumer(
+							// 		{
+							// 			dataConsumerPeer : otherPeer,
+							// 			dataProducerPeer : peer,
+							// 			dataProducer
+							// 		});
+							// }
+	
+							break;
+						}
+					}
+					break;
+				}
+			case 'getTransportStats':
+				{
+					log.info(`message user:${userid} req getTransportStats`);
+					const { transportId } = message;
+					const transport =user._transports.get(transportId);
+	
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+	
+					const stats = await transport.getStats();
+	
+					var  resp = {
+						data:stats
+					}
+					callback('callback',{retEvent:"success",data:resp});
+	
+	
+					break;
+				}
+	
+			case 'getProducerStats':
+			{
+				log.info(`message user:${userid} req getProducerStats`);
+				const { producerId } =   message;
+				const producer = user._producers.get(producerId);
+
+				if (!producer)
+					throw new Error(`producer with id "${producerId}" not found`);
+
+				const stats = await producer.getStats();
+
+				var  resp = {
+					data:stats
+				}
+				callback('callback',{retEvent:"success",data:resp});
+
+				break;
+			}
+			case 'getConsumerStats':
+			{
+				log.info(`message user:${userid} req getConsumerStats`);
+				const { consumerId } =   message;
+				const consumer =  user._consumers.get(consumerId);
+
+				if (!consumer)
+					throw new Error(`consumer with id "${consumerId}" not found`);
+
+				const stats = await consumer.getStats();
+				var  resp = {
+					data:stats
+				}
+				callback('callback',{retEvent:"success",data:resp});
+
+				break;
+			}
+			case 'getDataProducerStats':
+			{
+				log.info(`message user:${userid} req getDataProducerStats`);
+				const { dataProducerId } =   message;
+				const dataProducer =   user._dataProducers.get(dataProducerId);
+
+				if (!dataProducer)
+					throw new Error(`dataProducer with id "${dataProducerId}" not found`);
+
+				const stats = await dataProducer.getStats();
+				var  resp = {
+					data:stats
+				}
+				callback('callback',{retEvent:"success",data:resp});
+				break;
+			}
+
+			case 'getDataConsumerStats':
+			{
+				log.info(`message user:${userid} req getDataConsumerStats`);
+				const { dataConsumerId }  =  message;
+				const dataConsumer = peer._dataConsumers.get(dataConsumerId);
+
+				if (!dataConsumer)
+					throw new Error(`dataConsumer with id "${dataConsumerId}" not found`);
+
+				const stats = await dataConsumer.getStats();
+				var  resp = {
+					data:stats
+				}
+				callback('callback',{retEvent:"success",data:resp});
+
+				break;
+			}
+			case 'applyNetworkThrottle':
+			{
+				log.info(`message user:${userid} req applyNetworkThrottle`);
+				const DefaultUplink = 1000000;
+				const DefaultDownlink = 1000000;
+				const DefaultRtt = 0;
+
+				const { uplink, downlink, rtt, secret } =   message;
+
+				if (!secret || secret !== process.env.NETWORK_THROTTLE_SECRET)
+				{
+					callback('callback',{retEvent:"error",data:{errmsg:"operation NOT allowed", errcode:1002}});
+					return;
+				}
+
+				try
+				{
+					await throttle.start(
+						{
+							up   : uplink || DefaultUplink,
+							down : downlink || DefaultDownlink,
+							rtt  : rtt || DefaultRtt
+						});
+
+					log.warn(
+						'network throttle set [uplink:%s, downlink:%s, rtt:%s]',
+						uplink || DefaultUplink,
+						downlink || DefaultDownlink,
+						rtt || DefaultRtt);
+
+					callback('callback',{retEvent:"success",data:{data:{}}});
+				}
+				catch (error)
+				{
+					log.error('network throttle apply failed: %o', error);
+					callback('callback',{retEvent:"error",data:{errmsg:error.toString(), errcode:1002}});
+				}
+				break;
+			}
+
+			case 'resetNetworkThrottle':
+			{
+				log.info(`message user:${userid} req resetNetworkThrottle`);
+				const { secret } =   message;
+
+				if (!secret || secret !== process.env.NETWORK_THROTTLE_SECRET)
+				{
+					callback('callback',{retEvent:"error",data:{errmsg:"operation NOT allowed", errcode:1002}});
+					return;
+				}
+				try
+				{
+					await throttle.stop({});
+					log.warn('network throttle stopped');
+					callback('callback',{retEvent:"success",data:{data:{}}});
+				}
+				catch (error)
+				{
+					log.error('network throttle stop failed: %o', error);
+					callback('callback',{retEvent:"error",data:{errmsg:error.toString(), errcode:1002}});
+				}
+
+				break;
+			}
+			default:
+			{
+				log.error(`unknown request.method：${methed}`);
+				callback('callback',{retEvent:"error",data: {errmsg:"unknown request.method", errcode:1004}});
+			}
        }
             
       }

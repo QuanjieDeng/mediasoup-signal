@@ -106,6 +106,7 @@ Object.keys(opt.options).forEach((prop) => {
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
 const amqper = require('./../common/amqper');
+const { cli } = require('winston/lib/winston/config');
 const ecch = require('./ecCloudHandler').EcCloudHandler({ amqper });
 const nuve = require('./nuveProxy').NuveProxy({ amqper });
 const Rooms = require('./models/Room').Rooms;
@@ -310,6 +311,7 @@ const listen =  () => {
 
             const room =  await rooms.getOrCreateRoom(myId,agentId, token.room);
             const client = await room.createClient(channel, token, options);
+
             callback('success', {
               roomId: room.id,
               clientId: client.id });
@@ -436,6 +438,8 @@ exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
       callback('callback',{ event,msg});
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
+  }else{
+    log.error(`messages: forwordSingleMsgToClient can't  get  room by client:${clientId}`);
   }
 };
 exports.forwordSingleMsgToRoom = (roomid,msg, methed) => {

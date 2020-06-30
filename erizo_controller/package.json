@@ -6,6 +6,7 @@
   "private": true,
   "devDependencies": {},
   "dependencies": {
+    "@sitespeed.io/throttle": "^1.0.3",
     "amqp": "~0.2.7",
     "aws-sdk": "~2.566.0",
     "express": "~4.17.1",
@@ -32,5 +33,7 @@
       "email": "jcervino@dit.upm.es"
     }
   ],
-  "scripts": {}
+  "scripts": {
+    "start": "cd  ./erizoAgent; DEBUG=${DEBUG:='*mediasoup* *INFO* *WARN* *ERROR*'}  node erizoAgent.js"
+  }
 }

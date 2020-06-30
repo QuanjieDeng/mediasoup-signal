@@ -41,6 +41,26 @@ class Client extends events.EventEmitter {
     this.socketEventListeners.set('getRouterRtpCapabilities', this.onClientRequestCom.bind(this,"getRouterRtpCapabilities"));
     this.socketEventListeners.set('createWebRtcTransport', this.onClientRequestCom.bind(this,"createWebRtcTransport"));
     this.socketEventListeners.set('join', this.onJoin.bind(this));
+    this.socketEventListeners.set('connectWebRtcTransport', this.onClientRequestCom.bind(this,"connectWebRtcTransport"));
+    this.socketEventListeners.set('produce', this.onClientRequestCom.bind(this,"produce"));
+    this.socketEventListeners.set('closeProducer', this.onClientRequestCom.bind(this,"closeProducer"));
+    this.socketEventListeners.set('pauseProducer', this.onClientRequestCom.bind(this,"pauseProducer"));
+    this.socketEventListeners.set('resumeProducer', this.onClientRequestCom.bind(this,"resumeProducer"));
+    this.socketEventListeners.set('pauseConsumer', this.onClientRequestCom.bind(this,"pauseConsumer"));
+    this.socketEventListeners.set('resumeConsumer', this.onClientRequestCom.bind(this,"resumeConsumer"));
+    this.socketEventListeners.set('restartIce', this.onClientRequestCom.bind(this,"restartIce"));
+    this.socketEventListeners.set('setConsumerPreferredLayers', this.onClientRequestCom.bind(this,"setConsumerPreferredLayers"));
+    this.socketEventListeners.set('setConsumerPriority', this.onClientRequestCom.bind(this,"setConsumerPriority"));
+    this.socketEventListeners.set('requestConsumerKeyFrame', this.onClientRequestCom.bind(this,"requestConsumerKeyFrame"));
+    this.socketEventListeners.set('produceData', this.onClientRequestCom.bind(this,"produceData"));
+    this.socketEventListeners.set('getTransportStats', this.onClientRequestCom.bind(this,"getTransportStats"));
+    this.socketEventListeners.set('getProducerStats', this.onClientRequestCom.bind(this,"getProducerStats"));
+    this.socketEventListeners.set('getConsumerStats', this.onClientRequestCom.bind(this,"getConsumerStats"));
+    this.socketEventListeners.set('getDataProducerStats', this.onClientRequestCom.bind(this,"getDataProducerStats"));
+    this.socketEventListeners.set('getDataConsumerStats', this.onClientRequestCom.bind(this,"getDataConsumerStats"));
+    this.socketEventListeners.set('applyNetworkThrottle', this.onClientRequestCom.bind(this,"applyNetworkThrottle"));
+    this.socketEventListeners.set('resetNetworkThrottle', this.onClientRequestCom.bind(this,"resetNetworkThrottle"));
+
 
     this.socketEventListeners.forEach((value, key) => {
       this.channel.socketOn(key, value);
@@ -130,7 +150,7 @@ class Client extends events.EventEmitter {
 
   onJoin(message,callback){
     log.info(`message: user:${this.id} req  join room`);
-    // log.info(`messages: user's name:${JSON.stringify(message.data)}`);
+    log.info(`messages: user's name:${JSON.stringify(message)}`);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();

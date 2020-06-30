@@ -1,5 +1,7 @@
 
 const erizoController = require('./../erizoController');
+const logger = require('./../../common/logger').logger;
+const log = logger.getLogger('ErizoController - rpc');
 const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManager;
 
 let replManager = false;
@@ -32,6 +34,7 @@ exports.deleteUser = (args, callback) => {
 
 //
 exports.forwordSingleMsgToClient = (clientId, msg,methed,callback) => {
+  log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed}    msg:${JSON.stringify(msg)}`);
   erizoController.forwordSingleMsgToClient(clientId, msg,methed,callback);
 };
 

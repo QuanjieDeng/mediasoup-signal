@@ -26,4 +26,4 @@ cd $ROOT/erizo_controller
 ./initErizo_controller.sh
 ./initErizo_agent.sh
 
-# echo [licode] Done, run ./scripts/initBasicExample.sh
+# echo [licode] Done

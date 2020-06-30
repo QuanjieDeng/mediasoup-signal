@@ -165,8 +165,8 @@ module.exports = config;
 
 /****** mediasoup *****/
 config.mediasoup = {};
-mediasoup.numWorkers = Object.keys(os.cpus()).length;
-mediasoup.workerSettings = {
+config.mediasoup.numWorkers = Object.keys(os.cpus()).length;
+config.mediasoup.workerSettings = {
     logLevel : 'debug',
     logTags  :
     [
@@ -186,7 +186,7 @@ mediasoup.workerSettings = {
     rtcMinPort : process.env.MEDIASOUP_MIN_PORT || 40000,
     rtcMaxPort : process.env.MEDIASOUP_MAX_PORT || 49999
 };
-mediasoup.routerOptions = 		{
+config.mediasoup.routerOptions = 		{
     mediaCodecs :
     [
         {
@@ -241,7 +241,7 @@ mediasoup.routerOptions = 		{
     ]
 };
 
-mediasoup.webRtcTransportOptions = 		{
+config.mediasoup.webRtcTransportOptions = 		{
     listenIps :
     [
         {
@@ -256,7 +256,7 @@ mediasoup.webRtcTransportOptions = 		{
     maxIncomingBitrate              : 1500000
 };
 
-mediasoup.plainTransportOptions = 		{
+config.mediasoup.plainTransportOptions = 		{
     listenIp :
     {
         ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.81',

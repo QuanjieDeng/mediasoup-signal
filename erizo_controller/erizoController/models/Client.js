@@ -107,7 +107,7 @@ class Client extends events.EventEmitter {
         device      : this.device
       }
     };
-    this.room.sendMessage("newPeer", msg);
+    this.room.sendMessage("newPeer", msg,{ excludePeer:this });
   }
 
   onDisconnect() {
@@ -169,7 +169,7 @@ class Client extends events.EventEmitter {
         var retEvent =  result.retEvent;
 
 
-        const peerInfos = this.room.getClientList();
+        const peerInfos = this.room.getClientList({excludePeer:this});
         var  resp = {
           data:{
             peers:peerInfos

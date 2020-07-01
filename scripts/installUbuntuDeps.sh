@@ -30,9 +30,6 @@ parse_arguments(){
       "--enable-gpl")
         ENABLE_GPL=true
         ;;
-      "--cleanup")
-        CLEANUP=true
-        ;;
       "--fast")
         FAST_MAKE='-j4'
         ;;
@@ -209,17 +206,6 @@ install_libsrtp(){
   fi
 }
 
-cleanup(){
-  if [ -d $LIB_DIR ]; then
-    cd $LIB_DIR
-    rm -r libsrtp*
-    rm -r libav*
-    rm -r v11*
-    rm -r openssl*
-    rm -r opus*
-    cd $CURRENT_DIR
-  fi
-}
 
 parse_arguments $*
 
@@ -238,8 +224,3 @@ check_proxy
 # else
 #   # install_mediadeps_nogpl
 # fi
-
-if [ "$CLEANUP" = "true" ]; then
-  echo "Cleaning up..."
-  cleanup
-fi

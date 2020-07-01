@@ -46,9 +46,9 @@
 
  [getDataConsumerStats](#getDataConsumerStats)
 
- [applyNetworkThrottle-todo](#applyNetworkThrottle)
+ [applyNetworkThrottle](#applyNetworkThrottle)
 
- [resetNetworkThrottle-todo](#resetNetworkThrottle)
+ [resetNetworkThrottle](#resetNetworkThrottle)
 
 [触发类EVENT事件](#触发类EVENT事件)
 
@@ -880,10 +880,10 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	]
 }
 ```
-### applyNetworkThrottle-todo
+### applyNetworkThrottle
 #### 说明
 - 请求应用网络带宽控制
-### resetNetworkThrottle-todo
+### resetNetworkThrottle
 #### 说明
 - 请求重置网络带宽控制
 

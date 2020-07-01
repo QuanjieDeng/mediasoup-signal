@@ -37,7 +37,6 @@ class Client extends events.EventEmitter {
 
   listenToSocketEvents() {
     log.debug(`message: Adding listeners to socket events, client.id: ${this.id}`);
-    // this.socketEventListeners.set('createWebRtcTransport', this.oncreateWebRtcTransport.bind(this));
     this.socketEventListeners.set('getRouterRtpCapabilities', this.onClientRequestCom.bind(this,"getRouterRtpCapabilities"));
     this.socketEventListeners.set('createWebRtcTransport', this.onClientRequestCom.bind(this,"createWebRtcTransport"));
     this.socketEventListeners.set('join', this.onJoin.bind(this));

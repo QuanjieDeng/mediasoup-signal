@@ -21,7 +21,49 @@ git     clone  https://github.com/QuanjieDeng/mediasoup-signal.git
 ```
  ./scripts/installNuve.sh
 ```
+## 配置
+licode相关的配置不在追述,这里主要说mediasoup相关的配置 
+- webrtctransport监听地址
+```
+config.mediasoup.webRtcTransportOptions = 		{
+    listenIps :
+    [
+        {
+            ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.109',   //注意配置具体的ip地址
+            announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
+        }
+    ],
+    ........
+};
+```
+- plainTransport监听地址
 
+
+
+config.mediasoup.webRtcTransportOptions = 		{
+    listenIps :
+    [
+        {
+            ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.109',
+            announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
+        }
+    ],
+    initialAvailableOutgoingBitrate : 1000000,
+    minimumAvailableOutgoingBitrate : 600000,
+    maxSctpMessageSize              : 262144,
+    // Additional options that are not part of WebRtcTransportOptions.
+    maxIncomingBitrate              : 1500000
+};
+
+config.mediasoup.plainTransportOptions = 		{
+    listenIp :
+    {
+        ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.109',
+        announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
+    },
+    maxSctpMessageSize : 262144,
+    enableSrtp : false
+};
 
 ## 启动
 分为nuve  ec,ea

@@ -533,6 +533,23 @@ class Room extends events.EventEmitter {
 
 					break;
 				}
+			case 'restartIce':
+				{
+					log.info(`message user:${userid} req restartIce`);
+					const { transportId } =  message;
+					const transport =   user._transports.get(transportId);
+	
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+	
+					const iceParameters = await transport.restartIce();
+	
+					var  res = {
+						data:iceParameters
+					}
+					callback('callback',{retEvent:"success",data: res});
+					break;
+				}
 		    case 'produce':
 			  	{
 					log.info(`message user:${userid} req produce`);
@@ -656,7 +673,7 @@ class Room extends events.EventEmitter {
 						throw new Error('Peer not yet joined');
 
 					const { producerId } =  message;
-					const producer = peer._producers.get(producerId);
+					const producer = user._producers.get(producerId);
 
 					if (!producer)
 						throw new Error(`producer with id "${producerId}" not found`);
@@ -734,7 +751,7 @@ class Room extends events.EventEmitter {
 						throw new Error('Peer not yet joined');
 
 					const { consumerId, priority } =  message;
-					const consumer = peer.data.consumers.get(consumerId);
+					const consumer = user._consumers.get(consumerId);
 
 					if (!consumer)
 						throw new Error(`consumer with id "${consumerId}" not found`);
@@ -900,7 +917,7 @@ class Room extends events.EventEmitter {
 			{
 				log.info(`message user:${userid} req getDataConsumerStats`);
 				const { dataConsumerId }  =  message;
-				const dataConsumer = peer._dataConsumers.get(dataConsumerId);
+				const dataConsumer = user._dataConsumers.get(dataConsumerId);
 
 				if (!dataConsumer)
 					throw new Error(`dataConsumer with id "${dataConsumerId}" not found`);

@@ -11,10 +11,6 @@ const Getopt = require('node-getopt');
 // Configuration default values
 global.config = config || {};
 global.config.erizoController = global.config.erizoController || {};
-global.config.erizoController.iceServers =
-  global.config.erizoController.iceServers || [{ url: 'stun:stun.l.google.com:19302' }];
-global.config.erizoController.defaultVideoBW = global.config.erizoController.defaultVideoBW || 300;
-global.config.erizoController.maxVideoBW = global.config.erizoController.maxVideoBW || 300;
 global.config.erizoController.publicIP = global.config.erizoController.publicIP || '';
 global.config.erizoController.hostname = global.config.erizoController.hostname || '';
 global.config.erizoController.port = global.config.erizoController.port || 8080;
@@ -25,6 +21,8 @@ global.config.erizoController.ssl_cert =
   global.config.erizoController.ssl_cert || '../../cert/cert.pem';
 global.config.erizoController.sslCaCerts =
   global.config.erizoController.sslCaCerts || undefined;
+global.config.erizoController.networkInterface =
+  global.config.erizoController.networkInterface || undefined;
 global.config.erizoController.listen_port = global.config.erizoController.listen_port || 8080;
 global.config.erizoController.listen_ssl = global.config.erizoController.listen_ssl || false;
 global.config.erizoController.turnServer = global.config.erizoController.turnServer || undefined;
@@ -38,19 +36,6 @@ global.config.erizoController.recording_path =
   global.config.erizoController.recording_path || undefined;
 global.config.erizoController.exitOnNuveCheckFail =
   global.config.erizoController.exitOnNuveCheckFail || false;
-global.config.erizoController.allowSinglePC =
-  global.config.erizoController.allowSinglePC || '';
-global.config.erizoController.maxErizosUsedByRoom =
-  global.config.erizoController.maxErizosUsedByRoom || 100;
-
-global.config.erizoController.roles = global.config.erizoController.roles ||
-  { presenter: { publish: true, subscribe: true, record: true },
-    viewer: { subscribe: true },
-    viewerWithData: { subscribe: true,
-      publish: { audio: false,
-        video: false,
-        screen: false,
-        data: true } } };
 
 
 // Parse command line arguments
@@ -167,8 +152,8 @@ const addToCloudHandler = (callback) => {
 
   if (interfaces) {
     Object.keys(interfaces).forEach((k) => {
-      if (!global.config.erizoController.networkinterface ||
-        global.config.erizoController.networkinterface === k) {
+      if (!global.config.erizoController.networkInterface ||
+        global.config.erizoController.networkInterface === k) {
         Object.keys(interfaces[k]).forEach((k2) => {
           address = interfaces[k][k2];
           if (address.family === 'IPv4' && !address.internal) {

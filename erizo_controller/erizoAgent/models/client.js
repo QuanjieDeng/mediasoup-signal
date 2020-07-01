@@ -56,7 +56,7 @@ class Client extends events.EventEmitter {
       data:msg
     }
     await this.room.sendMsgToClient(this.id,methed,sendmsg,function(ret,result){
-      log.info(`request callback: ret:${ret} result:${JSON.stringify(result)}`);
+      log.debug(`request callback: ret:${ret} result:${JSON.stringify(result)}`);
     });
   }
 

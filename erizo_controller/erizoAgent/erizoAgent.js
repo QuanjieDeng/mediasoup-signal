@@ -16,7 +16,6 @@ global.config.erizoAgent.instanceLogDir = global.config.erizoAgent.instanceLogDi
 global.config.erizoAgent.useIndividualLogFiles =
   global.config.erizoAgent.useIndividualLogFiles || false;
 
-global.config.erizoAgent.launchDebugErizoJS = global.config.erizoAgent.launchDebugErizoJS || false;
 
 const BINDED_INTERFACE_NAME = global.config.erizoAgent.networkInterface;
 
@@ -76,9 +75,6 @@ Object.keys(opt.options).forEach((prop) => {
       break;
     case 'metadata':
       metadata = JSON.parse(value);
-      break;
-    case 'debug':
-      global.config.erizoAgent.launchDebugErizoJS = true;
       break;
     default:
       global.config.erizoAgent[prop] = value;

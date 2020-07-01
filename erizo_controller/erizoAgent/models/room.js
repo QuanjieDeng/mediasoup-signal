@@ -147,7 +147,7 @@ class Room extends events.EventEmitter {
 		// This should not happen.
 		if (!transport)
 		{
-			logger.warn('_createDataConsumer() | Transport for consuming not found');
+			log.warn('_createDataConsumer() | Transport for consuming not found');
 
 			return;
 		}
@@ -164,7 +164,7 @@ class Room extends events.EventEmitter {
 		}
 		catch (error)
 		{
-			logger.warn('_createDataConsumer() | transport.consumeData():%o', error);
+			log.warn('_createDataConsumer() | transport.consumeData():%o', error);
 
 			return;
 		}
@@ -207,7 +207,7 @@ class Room extends events.EventEmitter {
 		}
 		catch (error)
 		{
-			logger.warn('_createDataConsumer() | failed:%o', error);
+			log.warn('_createDataConsumer() | failed:%o', error);
 		}
 	}
 
@@ -329,7 +329,7 @@ class Room extends events.EventEmitter {
 
 		consumer.on('trace', (trace) =>
 		{
-			logger.debug(
+			log.debug(
 				'consumer "trace" event [producerId:%s, trace.type:%s, trace:%o]',
 				consumer.id, trace.type, trace);
 		});

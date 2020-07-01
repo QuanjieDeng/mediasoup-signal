@@ -173,7 +173,7 @@ if [ "$ERIZOAGENT" == "true" ]; then
   if [ $DEBUG ]; then
     export DEBUG="$DEBUG"
   fi
-    export DEBUG="mediasoup:WARN:* mediasoup:ERROR:*"
+    export DEBUG="*mediasoup* *INFO* *WARN* *ERROR*"
 
   run_erizoAgent
 fi

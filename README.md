@@ -72,3 +72,38 @@ config.mediasoup.plainTransportOptions = 		{
 - ea     直接切换目录  erizo_controller/erizoAgent   执行  node  erzioAgent.js
 
 
+## Docker
+### 镜像制作
+- 切换到代码的根目录 
+- 执行命令生成镜像 
+```
+docker  build  -t mediasoup-signal:v1    .
+```
+
+### 容器启动 
+- mongo
+```
+docker run     -p  27017:27017   -v   /tmp/mongo:/opt/licode/build/db  mediasoup-signal:v1  --mongodb
+```
+- rabbitmq
+```
+docker run    -p  5672:5672  mediasoup-signal:v1 --rabbitmq
+```
+- nuve
+```
+docker run     -p  3000:3000    -e "RABBITMQ_URL=amqp:test:123456@192.168.94.109:5672"    -e "MONGO_URL=192.168.94.109/nuvedb"  mediasoup-signal:v1 --nuve
+```
+- ec
+```
+docker run   -p  8080:8080    -e "RABBITMQ_URL=amqp:test:123456@192.168.94.109:5672"   -e "PUBLIC_IP=192.168.94.109"         mediasoup-signal:v1   --erizoController
+```
+- ea 
+```
+MIN_PORT=40000 
+MAX_PORT=40050
+docker run   --net  host -p $MIN_PORT-$MAX_PORT:$MIN_PORT-$MAX_PORT/udp  -e "RABBITMQ_URL=amqp:test:123456@192.168.94.109:5672"  -e "PUBLIC_IP=192.168.94.109" -e  "RTCMINPORT=$MIN_PORT"  -e  "RTCMAXPORT=$MAX_PORT"  mediasoup-signal:v1  --erizoAgent
+
+可选参数 
+DEBUG 设置mediasoup子进程的日志等级  默认为  DEBUG="*mediasoup* *INFO* *WARN* *ERROR*"
+
+```

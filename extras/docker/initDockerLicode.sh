@@ -108,6 +108,7 @@ run_mongo() {
 run_nuve() {
   echo "Starting Nuve"
   cd $ROOT/nuve/nuveAPI
+  
   node nuve.js &
   sleep 5
 }
@@ -169,6 +170,10 @@ if [ "$ERIZOAGENT" == "true" ]; then
   echo "config.erizoAgent.publicIP = '$PUBLIC_IP';" >> /opt/mediasoup-signal/licode_config.js
   echo "config.mediasoup.workerSettings.rtcMinPort = '$RTCMINPORT';" >> /opt/mediasoup-signal/licode_config.js
   echo "config.mediasoup.workerSettings.rtcMaxPort = '$RTCMAXPORT';" >> /opt/mediasoup-signal/licode_config.js
+  if [ $DEBUG ]; then
+    export DEBUG="$DEBUG"
+  fi
+    export DEBUG="mediasoup:WARN:* mediasoup:ERROR:*"
 
   run_erizoAgent
 fi

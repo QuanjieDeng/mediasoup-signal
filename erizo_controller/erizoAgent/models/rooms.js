@@ -3,7 +3,7 @@ const events = require('events');
 const Room =  require('./room').Room;
 const logger = require('./../../common/logger').logger;
 
-const log = logger.getLogger('ErizoAgent-Rooms');
+const log = logger.getLogger('Room');
 
 
 class Rooms extends events.EventEmitter {

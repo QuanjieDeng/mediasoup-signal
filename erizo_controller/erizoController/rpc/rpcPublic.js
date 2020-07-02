@@ -1,7 +1,7 @@
 
 const erizoController = require('./../erizoController');
 const logger = require('./../../common/logger').logger;
-const log = logger.getLogger('ErizoController - rpc');
+const log = logger.getLogger('RPCPublic');
 const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManager;
 
 let replManager = false;

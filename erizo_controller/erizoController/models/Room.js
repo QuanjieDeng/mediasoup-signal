@@ -5,7 +5,7 @@ const { cli } = require('winston/lib/winston/config');
 const Client = require('./Client').Client;
 const logger = require('./../../common/logger').logger;
 
-const log = logger.getLogger('ErizoController - Room');
+const log = logger.getLogger('Room');
 
 class Room extends events.EventEmitter {
   constructor({erizoControllerId, amqper,agentId, ecch, id}) {

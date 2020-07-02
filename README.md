@@ -104,6 +104,17 @@ MAX_PORT=40050
 docker run   --net  host -p $MIN_PORT-$MAX_PORT:$MIN_PORT-$MAX_PORT/udp  -e "RABBITMQ_URL=amqp:test:123456@192.168.94.109:5672"  -e "PUBLIC_IP=192.168.94.109" -e  "RTCMINPORT=$MIN_PORT"  -e  "RTCMAXPORT=$MAX_PORT"  mediasoup-signal:v1  --erizoAgent
 
 可选参数 
-DEBUG 设置mediasoup子进程的日志等级  默认为  DEBUG="*mediasoup* *INFO* *WARN* *ERROR*"
+DEBUG环境变量 设置mediasoup子进程的日志显示
+由于mediasoup的nodejs层使用 debug模块控制日志的限制
+注册的民命空间有 
+mediasoup：*
+mediasoup:WARN*
+mediasoup:ERROR*
+默认不打开子进程的日志，如果需要打开则直接设置环境变量DEBUG的值即可 
+例如-需要打开所有的日志 
+export  DEBUG=mediasoup*
+
+只打开WARN级别的日志
+export  DEBUG=mediasoup:WARN*
 
 ```

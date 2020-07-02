@@ -172,9 +172,10 @@ if [ "$ERIZOAGENT" == "true" ]; then
   echo "config.mediasoup.workerSettings.rtcMaxPort = '$RTCMAXPORT';" >> /opt/mediasoup-signal/licode_config.js
   if [ $DEBUG ]; then
     export DEBUG="$DEBUG"
+  else
+    export DEBUG="mediasoup:WARN* mediasoup:ERROR*"
   fi
-    export DEBUG="*mediasoup* *INFO* *WARN* *ERROR*"
-
+  
   run_erizoAgent
 fi
 

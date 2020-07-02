@@ -30,9 +30,13 @@ class Room extends events.EventEmitter {
 			});
     }
 
-  getClientList(){
+  getClientList({ excludePeer = undefined } = {}){
     const  client_list = [];
     this.clients.forEach(function(v,k){
+      if(v == excludePeer){
+        return;
+      }
+      
       var  user = {
         id          : v.id,
         displayName : v.displayName,
@@ -87,12 +91,14 @@ class Room extends events.EventEmitter {
   }
 
   //房间内消息广播
-  sendMessage(method, args) {
+  sendMessage(method, args,{ excludePeer = undefined } = {}) {
     this.forEachClient((client) => {
-      log.debug('message: sendMsgToRoom,',
-        'clientId:', client.id, ',',
-        'roomId:', this.id, ', ',
-        logger.objectToLog(method));
+      if(client.id == excludePeer.id){
+        return;
+      }
+
+      log.debug(`message: sendMsgToRoom,clientId:${client.id},roomId:${this.id} method:${method}`);
+
       client.sendMessage(method, args);
     });
   }

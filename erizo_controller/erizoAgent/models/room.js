@@ -7,6 +7,7 @@ const { cli } = require('winston/lib/winston/config');
 const { threadId } = require('worker_threads');
 const { use } = require('chai');
 const { useFakeTimers } = require('sinon');
+const { Logger } = require('log4js/lib/logger');
 const logger = require('./../../common/logger').logger;
 
 const log = logger.getLogger('ErizoAgent-Room');
@@ -20,8 +21,12 @@ class Room extends events.EventEmitter {
     this.amqper = amqper;
     this._mediasoupRouter = mediasoupRouter;
     this._audioLevelObserver = audioLevelObserver;
-    this._networkThrottled = false;
-    global.audioLevelObserver = this._audioLevelObserver;
+	this._networkThrottled = false;
+	
+	// Handle audioLevelObserver.
+	this._handleAudioLevelObserver();
+	global.audioLevelObserver = this._audioLevelObserver;
+
 	log.info(`Room构造函数 erizoControllerId:${this.erizoControllerId} id:${this.id}`);
 	
   }
@@ -129,6 +134,40 @@ class Room extends events.EventEmitter {
     this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
   }
 
+  _handleAudioLevelObserver()
+  {
+	  this._audioLevelObserver.on('volumes', (volumes) =>
+	  {
+		  const { producer, volume } = volumes[0];
+
+		  log.debug(
+		  	'audioLevelObserver "volumes" event [producerId:%s, volume:%s]',
+		  	producer.id, volume);
+
+		  // Notify all Peers.
+		  this.forEachClient((joinedPeer)=>{
+			if(!joinedPeer.joined)
+				return;
+			joinedPeer.notify('activeSpeaker',{peerId : producer.appData.peerId,volume : volume}).catch(() => {});
+
+		   });
+	  });
+
+	  this._audioLevelObserver.on('silence', () =>
+	  {
+		  log.debug('audioLevelObserver "silence" event');
+
+		  // Notify all Peers.
+
+		  this.forEachClient((joinedPeer)=>{
+			if(!joinedPeer.joined)
+				return;
+			joinedPeer.notify('activeSpeaker',{peerId : null }).catch(() => {});
+
+		   });
+	  });
+  }
+
 	async _createDataConsumer(
 		{
 			dataConsumerPeer,
@@ -147,7 +186,7 @@ class Room extends events.EventEmitter {
 		// This should not happen.
 		if (!transport)
 		{
-			logger.warn('_createDataConsumer() | Transport for consuming not found');
+			log.warn('_createDataConsumer() | Transport for consuming not found');
 
 			return;
 		}
@@ -164,7 +203,7 @@ class Room extends events.EventEmitter {
 		}
 		catch (error)
 		{
-			logger.warn('_createDataConsumer() | transport.consumeData():%o', error);
+			log.warn('_createDataConsumer() | transport.consumeData():%o', error);
 
 			return;
 		}
@@ -207,7 +246,7 @@ class Room extends events.EventEmitter {
 		}
 		catch (error)
 		{
-			logger.warn('_createDataConsumer() | failed:%o', error);
+			log.warn('_createDataConsumer() | failed:%o', error);
 		}
 	}
 
@@ -329,7 +368,7 @@ class Room extends events.EventEmitter {
 
 		consumer.on('trace', (trace) =>
 		{
-			logger.debug(
+			log.debug(
 				'consumer "trace" event [producerId:%s, trace.type:%s, trace:%o]',
 				consumer.id, trace.type, trace);
 		});
@@ -533,6 +572,23 @@ class Room extends events.EventEmitter {
 
 					break;
 				}
+			case 'restartIce':
+				{
+					log.info(`message user:${userid} req restartIce`);
+					const { transportId } =  message;
+					const transport =   user._transports.get(transportId);
+	
+					if (!transport)
+						throw new Error(`transport with id "${transportId}" not found`);
+	
+					const iceParameters = await transport.restartIce();
+	
+					var  res = {
+						data:iceParameters
+					}
+					callback('callback',{retEvent:"success",data: res});
+					break;
+				}
 		    case 'produce':
 			  	{
 					log.info(`message user:${userid} req produce`);
@@ -656,7 +712,7 @@ class Room extends events.EventEmitter {
 						throw new Error('Peer not yet joined');
 
 					const { producerId } =  message;
-					const producer = peer._producers.get(producerId);
+					const producer = user._producers.get(producerId);
 
 					if (!producer)
 						throw new Error(`producer with id "${producerId}" not found`);
@@ -734,7 +790,7 @@ class Room extends events.EventEmitter {
 						throw new Error('Peer not yet joined');
 
 					const { consumerId, priority } =  message;
-					const consumer = peer.data.consumers.get(consumerId);
+					const consumer = user._consumers.get(consumerId);
 
 					if (!consumer)
 						throw new Error(`consumer with id "${consumerId}" not found`);
@@ -900,7 +956,7 @@ class Room extends events.EventEmitter {
 			{
 				log.info(`message user:${userid} req getDataConsumerStats`);
 				const { dataConsumerId }  =  message;
-				const dataConsumer = peer._dataConsumers.get(dataConsumerId);
+				const dataConsumer = user._dataConsumers.get(dataConsumerId);
 
 				if (!dataConsumer)
 					throw new Error(`dataConsumer with id "${dataConsumerId}" not found`);

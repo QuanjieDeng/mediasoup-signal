@@ -37,7 +37,6 @@ class Client extends events.EventEmitter {
 
   listenToSocketEvents() {
     log.debug(`message: Adding listeners to socket events, client.id: ${this.id}`);
-    // this.socketEventListeners.set('createWebRtcTransport', this.oncreateWebRtcTransport.bind(this));
     this.socketEventListeners.set('getRouterRtpCapabilities', this.onClientRequestCom.bind(this,"getRouterRtpCapabilities"));
     this.socketEventListeners.set('createWebRtcTransport', this.onClientRequestCom.bind(this,"createWebRtcTransport"));
     this.socketEventListeners.set('join', this.onJoin.bind(this));
@@ -108,7 +107,7 @@ class Client extends events.EventEmitter {
         device      : this.device
       }
     };
-    this.room.sendMessage("newPeer", msg);
+    this.room.sendMessage("newPeer", msg,{ excludePeer:this });
   }
 
   onDisconnect() {
@@ -128,14 +127,14 @@ class Client extends events.EventEmitter {
       this.emit('disconnect');
   }
   onClientRequestCom(methed,message,callback){
-    log.info(`message: onClientRequestCom ,methed: ${JSON.stringify(methed)} `);
+    log.debug(`message: onClientRequestCom ,methed: ${JSON.stringify(methed)} `);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();
       return;
     }
     const rpccallback = (result) => {
-      log.info(`onClientRequestCom rpccallback-methed:${methed}`);
+      log.debug(`message: onClientRequestCom rpccallback-methed:${methed}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{
@@ -149,8 +148,7 @@ class Client extends events.EventEmitter {
 
 
   onJoin(message,callback){
-    log.info(`message: user:${this.id} req  join room`);
-    log.info(`messages: user's name:${JSON.stringify(message)}`);
+    log.debug(`message: user:${this.id} req  join room`);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();
@@ -160,7 +158,7 @@ class Client extends events.EventEmitter {
     this.device = message.data.device;
 
     const rpccallback = (result) => {
-      log.info(`onJoin rpccallback:${JSON.stringify(result)}`);
+      log.debug(`message: onJoin rpccallback:${JSON.stringify(result)}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{
@@ -170,7 +168,7 @@ class Client extends events.EventEmitter {
         var retEvent =  result.retEvent;
 
 
-        const peerInfos = this.room.getClientList();
+        const peerInfos = this.room.getClientList({excludePeer:this});
         var  resp = {
           data:{
             peers:peerInfos
@@ -181,28 +179,6 @@ class Client extends events.EventEmitter {
     };
     this.room.processReqMessageFromClient(this.room.id, this.id, "join",message.data, rpccallback.bind(this));
   }
-  //
-  // ongetRouterRtpCapabilities(message,callback){
-  //   log.info(`message: ongetRouterRtpCapabilities,messgae: ${message} `);
-  //   if (this.room === undefined) {
-  //     log.error(`message: ongetRouterRtpCapabilities for user in undefined room user: ${this.user}`);
-  //     this.disconnect();
-  //     return;
-  //   }
-  //   const rpccallback = (result) => {
-  //     log.info("ongetRouterRtpCapabilities  rpccallback:"+JSON.stringify(result));
-  //     if(result  == "timeout"){
-  //       callback("error",{data:{}});
-  //     }else{
-  //       var retEvent =  result.retEvent;
-  //       var  data =  result.data;
-  //       callback(retEvent,data);
-  //     }
-  //   };
-  //   this.room.controller.processReqMessageFromClient(this.room.id, this.id, "getRouterRtpCapabilities",message.data, rpccallback.bind(this));
-  // }
-
-
 }
 
 exports.Client = Client;

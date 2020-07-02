@@ -1230,8 +1230,8 @@ try {
 ```
 {
 	"data": {
-		"peerId": "5j0pydzb",
-		"volume": -50
+		"peerId": "5j0pydzb",   //用户ID
+		"volume": -50    //音量大小 范围为  -127 -- 0
 	}
 }
 ```

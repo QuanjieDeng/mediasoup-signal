@@ -7,6 +7,7 @@ const { cli } = require('winston/lib/winston/config');
 const { threadId } = require('worker_threads');
 const { use } = require('chai');
 const { useFakeTimers } = require('sinon');
+const { Logger } = require('log4js/lib/logger');
 const logger = require('./../../common/logger').logger;
 
 const log = logger.getLogger('ErizoAgent-Room');
@@ -20,8 +21,12 @@ class Room extends events.EventEmitter {
     this.amqper = amqper;
     this._mediasoupRouter = mediasoupRouter;
     this._audioLevelObserver = audioLevelObserver;
-    this._networkThrottled = false;
-    global.audioLevelObserver = this._audioLevelObserver;
+	this._networkThrottled = false;
+	
+	// Handle audioLevelObserver.
+	this._handleAudioLevelObserver();
+	global.audioLevelObserver = this._audioLevelObserver;
+
 	log.info(`Room构造函数 erizoControllerId:${this.erizoControllerId} id:${this.id}`);
 	
   }
@@ -127,6 +132,40 @@ class Room extends events.EventEmitter {
 	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
 	
     this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
+  }
+
+  _handleAudioLevelObserver()
+  {
+	  this._audioLevelObserver.on('volumes', (volumes) =>
+	  {
+		  const { producer, volume } = volumes[0];
+
+		  log.debug(
+		  	'audioLevelObserver "volumes" event [producerId:%s, volume:%s]',
+		  	producer.id, volume);
+
+		  // Notify all Peers.
+		  this.forEachClient((joinedPeer)=>{
+			if(!joinedPeer.joined)
+				return;
+			joinedPeer.notify('activeSpeaker',{peerId : producer.appData.peerId,volume : volume}).catch(() => {});
+
+		   });
+	  });
+
+	  this._audioLevelObserver.on('silence', () =>
+	  {
+		  log.debug('audioLevelObserver "silence" event');
+
+		  // Notify all Peers.
+
+		  this.forEachClient((joinedPeer)=>{
+			if(!joinedPeer.joined)
+				return;
+			joinedPeer.notify('activeSpeaker',{peerId : null }).catch(() => {});
+
+		   });
+	  });
   }
 
 	async _createDataConsumer(

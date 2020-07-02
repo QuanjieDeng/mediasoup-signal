@@ -892,7 +892,8 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 ### newConsumer
 #### 说明
 - 通知新的消费者，服务器已经创建好，当前处于暂停状态，当客户端正确回复，则运行该comsumer
-- 客户端必须回复此消息
+- 客户端根据自身的需求判断是否要创建本地的consume
+- 客户端必须根据自身的情况进行回复
 
 #### 处理方式 
 - 事件名称 newConsumer

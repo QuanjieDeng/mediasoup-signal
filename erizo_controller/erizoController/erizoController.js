@@ -415,16 +415,17 @@ exports.deleteRoom = (roomId, callback) => {
 exports.getContext = () => rooms;
 
 exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
-  log.debug('message: forwordSingleMsgToClient', clientId, methed, msg, JSON.stringify(msg));
+  log.debug(`message: forwordSingleMsgToClient, clientId:${clientId} methed:${methed} msg:${JSON.stringify(msg)}`);
   const room = rooms.getRoomWithClientId(clientId);
   if (room) {
-    const socketiocallback = (event,msg) => {
-      log.debug(`message: forwordSingleMsgToClient  socketiocallback:-event:${event} msg:${msg}`);
-      callback('callback',{ event,msg});
+    const socketiocallback = (event,message) => {
+      log.debug(`message: forwordSingleMsgToClient methed:${methed} socketiocallback:-event:${event} --${JSON.stringify(event)} message:${JSON.stringify(message)}`);
+      callback(event,message);
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
   }else{
     log.error(`messages: forwordSingleMsgToClient can't  get  room by client:${clientId}`);
+    callback("error",{data:{}});
   }
 };
 exports.forwordSingleMsgToRoom = (roomid,msg, methed) => {

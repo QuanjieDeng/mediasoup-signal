@@ -35,7 +35,11 @@ exports.deleteUser = (args, callback) => {
 //
 exports.forwordSingleMsgToClient = (clientId, msg,methed,callback) => {
   log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed}    msg:${JSON.stringify(msg)}`);
-  erizoController.forwordSingleMsgToClient(clientId, msg,methed,callback);
+  var   tmpcallback = (event,msg)=>{
+    log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed} 临时callback，下面开始调用rpc_callback`);
+    callback('callback',{event:event,msg:msg});
+  }
+  erizoController.forwordSingleMsgToClient(clientId, msg,methed,tmpcallback);
 };
 
 exports.forwordSingleMsgToRoom = (roomid, msg,methed) => {

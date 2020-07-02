@@ -106,32 +106,32 @@ class Room extends events.EventEmitter {
 
   async   sendMsgToClient(clientId,methed,msg,callback)
   {
-    const rpccallback = (result) => {
-      log.info(`sendMsgToClient rpccallback:${JSON.stringify(result)} methed:${methed} clientid:${clientId}`);
-      if(result  == "timeout"){
-        callback("error",{data:{}});
-      }else{
-        callback("success",result);
-      }
-    };
-
     const args = [clientId,msg,methed];
 	var   ec_id = `erizoController_${this.erizoControllerId}`;
 	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
 	
-    await this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
+    await this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { callback(resp) {
+		log.debug(`sendMsgToClient rpccallback: resp:${JSON.stringify(resp)} methed:${methed} clientid:${clientId}`);
+		if (resp === 'timeout') {
+			callback("error",{data:{}});
+		} else {
+		  const event = resp.event;
+		  const msg = resp.msg;
+		  callback(event,msg);
+		}
+	  } });
   }
 
   async   sendNotifyMsgToClient(clientId,methed,msg)
   {
 	log.info(`sendNotifyMsgToClient  methed:${methed} clientid:${clientId} msg:${JSON.stringify(msg)}`);
-    const rpccallback = (result) => {
-    };
     const args = [clientId,msg,methed];
 	var   ec_id = `erizoController_${this.erizoControllerId}`;
 	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
 	
-    this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { rpccallback });
+    this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args,{callback(resp){
+		//nothing to do
+	}});
   }
 
   _handleAudioLevelObserver()
@@ -242,7 +242,7 @@ class Room extends events.EventEmitter {
 					label                : dataConsumer.label,
 					protocol             : dataConsumer.protocol,
 					appData              : dataProducer.appData
-				});
+				},function(ret,msd){});
 		}
 		catch (error)
 		{
@@ -387,22 +387,35 @@ class Room extends events.EventEmitter {
 					type           : consumer.type,
 					appData        : producer.appData,
 					producerPaused : consumer.producerPaused
+				},async (ret,msg)=>{
+					if(ret == "success"){
+						log.info(`messages resume consumer:${consumer.id}`);
+						await consumer.resume();
+						consumerPeer.notify(
+							'consumerScore',
+							{
+								consumerId : consumer.id,
+								score      : consumer.score
+							})
+							.catch(() => {});
+					}
 				});
 
 			// Now that we got the positive response from the remote endpoint, resume
 			// the Consumer so the remote endpoint will receive the a first RTP packet
 			// of this new stream once its PeerConnection is already ready to process
 			// and associate it.
-			log.info(`messages resume consumer:${consumer.id}`);
-			await consumer.resume();
 
-			consumerPeer.notify(
-				'consumerScore',
-				{
-					consumerId : consumer.id,
-					score      : consumer.score
-				})
-				.catch(() => {});
+			// log.info(`messages resume consumer:${consumer.id}`);
+			// await consumer.resume();
+
+			// consumerPeer.notify(
+			// 	'consumerScore',
+			// 	{
+			// 		consumerId : consumer.id,
+			// 		score      : consumer.score
+			// 	})
+			// 	.catch(() => {});
 		}
 		catch (error)
 		{

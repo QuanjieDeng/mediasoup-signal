@@ -51,12 +51,13 @@ class Client extends events.EventEmitter {
   }
 
   //发送到远端的请求消息
-  async request(methed,msg){
+  async request(methed,msg,callback){
     var  sendmsg = {
       data:msg
     }
     await this.room.sendMsgToClient(this.id,methed,sendmsg,function(ret,result){
-      log.debug(`request callback: ret:${ret} result:${JSON.stringify(result)}`);
+      log.debug(`client:request callback:methed:${methed}  ret:${ret} result:${JSON.stringify(result)}`);
+      callback(ret,result);
     });
   }
 

@@ -37,7 +37,7 @@ config.mediasoup.webRtcTransportOptions = 		{
 };
 ```
 - plainTransport监听地址
-
+```
 
 
 config.mediasoup.webRtcTransportOptions = 		{
@@ -64,7 +64,7 @@ config.mediasoup.plainTransportOptions = 		{
     maxSctpMessageSize : 262144,
     enableSrtp : false
 };
-
+```
 ## 启动
 分为nuve  ec,ea
 - nuve   直接切到目录  nuve/nuveAPI 执行  node  nuve.js   

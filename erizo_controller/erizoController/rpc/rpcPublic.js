@@ -1,7 +1,7 @@
 
 const erizoController = require('./../erizoController');
 const logger = require('./../../common/logger').logger;
-const log = logger.getLogger('ErizoController - rpc');
+const log = logger.getLogger('RPCPublic');
 const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManager;
 
 let replManager = false;
@@ -36,7 +36,7 @@ exports.deleteUser = (args, callback) => {
 exports.forwordSingleMsgToClient = (clientId, msg,methed,callback) => {
   log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed}    msg:${JSON.stringify(msg)}`);
   var   tmpcallback = (event,msg)=>{
-    log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed} 临时callback，下面开始调用rpc_callback`);
+    log.debug(`messages: forwordSingleMsgToClient client:${clientId}   methed:${methed} 涓存椂callback锛屼笅闈㈠紑濮嬭皟鐢╮pc_callback`);
     callback('callback',{event:event,msg:msg});
   }
   erizoController.forwordSingleMsgToClient(clientId, msg,methed,tmpcallback);

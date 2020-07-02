@@ -6,7 +6,7 @@ const uuidv4 = require('uuid/v4');
 const { cli } = require('winston/lib/winston/config');
 const logger = require('./../../common/logger').logger;
 
-const log = logger.getLogger('ErizoController - Client');
+const log = logger.getLogger('Client');
 
 class Client extends events.EventEmitter {
   constructor({channel, token, options, room}) {

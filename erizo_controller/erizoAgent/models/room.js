@@ -10,7 +10,7 @@ const { useFakeTimers } = require('sinon');
 const { Logger } = require('log4js/lib/logger');
 const logger = require('./../../common/logger').logger;
 
-const log = logger.getLogger('ErizoAgent-Room');
+const log = logger.getLogger('Room');
 
 class Room extends events.EventEmitter {
   constructor({roomid,erizoControllerid, amqper,mediasoupRouter,audioLevelObserver}) {
@@ -124,7 +124,7 @@ class Room extends events.EventEmitter {
 
   async   sendNotifyMsgToClient(clientId,methed,msg)
   {
-	log.info(`sendNotifyMsgToClient  methed:${methed} clientid:${clientId} msg:${JSON.stringify(msg)}`);
+	log.debug(`sendNotifyMsgToClient  methed:${methed} clientid:${clientId} msg:${JSON.stringify(msg)}`);
     const args = [clientId,msg,methed];
 	var   ec_id = `erizoController_${this.erizoControllerId}`;
 	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);

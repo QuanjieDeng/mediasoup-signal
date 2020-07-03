@@ -405,17 +405,6 @@ class Room extends events.EventEmitter {
 			// the Consumer so the remote endpoint will receive the a first RTP packet
 			// of this new stream once its PeerConnection is already ready to process
 			// and associate it.
-
-			// log.info(`messages resume consumer:${consumer.id}`);
-			// await consumer.resume();
-
-			// consumerPeer.notify(
-			// 	'consumerScore',
-			// 	{
-			// 		consumerId : consumer.id,
-			// 		score      : consumer.score
-			// 	})
-			// 	.catch(() => {});
 		}
 		catch (error)
 		{

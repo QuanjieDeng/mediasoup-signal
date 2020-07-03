@@ -5,7 +5,7 @@ const crypto = require('crypto');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const uuidv4 = require('uuid/v4');
 
-const log = logger.getLogger('ErizoController - Channel');
+const log = logger.getLogger('Channel');
 
 const NUVE_KEY = global.config.nuve.superserviceKey;
 
@@ -133,7 +133,6 @@ class Channel extends events.EventEmitter {
 
   sendMessageSync(type, arg,callback) {
     if (this.state === RECONNECTING) {
-      //TODO
       this.addToBuffer(type, arg,callback);
       return;
     }

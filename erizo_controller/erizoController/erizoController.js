@@ -390,18 +390,6 @@ exports.deleteRoom = (roomId, callback) => {
     return;
   }
 
-  if (!room.p2p) {
-    room.forEachClient((client) => {
-      client.removeSubscriptions();
-    });
-    room.streamManager.forEachPublishedStream((stream) => {
-      if (stream.hasAudio() || stream.hasVideo() || stream.hasScreen()) {
-        room.controller.removePublisher(stream.getID());
-      }
-    });
-    room.streamManager.publishedStreams.clear();
-  }
-
   room.forEachClient((client) => {
     client.channel.disconnect();
   });

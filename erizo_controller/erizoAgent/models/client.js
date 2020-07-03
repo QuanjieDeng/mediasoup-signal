@@ -32,8 +32,12 @@ class Client extends events.EventEmitter {
   }
 
   close(){
-    //TODO  关闭其下的所有的transport
     log.info('close() [clientid:%s]', this.id);
+    //关闭其下的所有的transport
+    for (const transport of  this._transports.values())
+    {
+      transport.close();
+    }
     this.room.removeClient(this.id);
     this.emit('disconnect');
   }

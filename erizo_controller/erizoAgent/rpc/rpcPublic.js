@@ -38,7 +38,7 @@ exports.handleUserRequest=(roomid,userid,methed,message,callback)=>{
 
 //用户离开房间-断开连接，或者其他的原因等等
 exports.deleteUser =  (roomid,userid)=>{
-  // try {
+  try {
     log.debug(`message: deleteUser  roomid: ${roomid} userid:${userid}`);
     const room =   rooms.getRoomById(roomid);
     if(!room){
@@ -50,9 +50,9 @@ exports.deleteUser =  (roomid,userid)=>{
       user.close();
     }
 
-  // } catch (error) {
-  //   log.error('message: error deleteUser, error:', error);
-  // }
+  } catch (error) {
+    log.error('message: error deleteUser, error:', error);
+  }
 };
 
 exports.rovMessage=  (args, callback) => {

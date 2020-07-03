@@ -877,17 +877,21 @@ class Room extends events.EventEmitter {
 						case 'chat':
 						{
 							// Create a server-side DataConsumer for each Peer.
-							//TODO
-							// for (const otherPeer of this._getJoinedPeers({ excludePeer: peer }))
-							// {
-							// 	this._createDataConsumer(
-							// 		{
-							// 			dataConsumerPeer : otherPeer,
-							// 			dataProducerPeer : peer,
-							// 			dataProducer
-							// 		});
-							// }
-	
+							this.forEachClient((joinedPeer)=>{
+								if(!joinedPeer.joined)
+									return;
+								if(joinedPeer.getid()== user.getid()){
+									return;
+								}
+		
+								this._createDataConsumer(
+									{
+										dataConsumerPeer : joinedPeer,
+										dataProducerPeer : user,
+										dataProducer
+									});
+					
+							});
 							break;
 						}
 					}

@@ -650,7 +650,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 			"ordered": false,
 			"maxRetransmits": 1
 		},
-		"label": "chat",
+		"label": "chat",     //聊天消息该字段固定为chat
 		"protocol": "",
 		"appData": {
 			"info": "my-chat-DataProducer"

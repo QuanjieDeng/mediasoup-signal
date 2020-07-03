@@ -110,6 +110,14 @@ class Client extends events.EventEmitter {
     this.room.sendMessage("newPeer", msg,{ excludePeer:this });
   }
 
+  notifyUserLeaveRom(){
+    var msg= {
+      data:{
+        peerId          : this.id
+      }
+    };
+    this.room.sendMessage("peerClosed", msg,{ excludePeer:this });
+  }
   onDisconnect() {
     this.stopListeningToSocketEvents();
     const timeStamp = new Date();
@@ -123,6 +131,8 @@ class Client extends events.EventEmitter {
           type: 'user_disconnection',
           timestamp: timeStamp.getTime() });
       }
+      //通知其他用户我的断开
+      this.notifyUserLeaveRom();
       this.room.removeClient(this.id);
       this.emit('disconnect');
   }

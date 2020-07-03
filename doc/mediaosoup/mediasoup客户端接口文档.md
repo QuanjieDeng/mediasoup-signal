@@ -1143,6 +1143,7 @@ try {
 ### consumerPaused
 #### 说明 
 - 通知有流暂停了 
+- 客户端在收到该事件需要找到本地对应的consume，调用consumer.pause()
 
 #### 通知格式
 - 事件 consumerPaused
@@ -1158,6 +1159,7 @@ try {
 ### consumerResumed
 #### 说明 
 - 通知有流恢复了 
+- 客户端收到该事件后根据ID找到本地的consume,调用 consumer.resume()
 #### 通知格式
 - 事件 consumerResumed
 - 参数 
@@ -1173,6 +1175,7 @@ try {
 ### consumerLayersChanged
 #### 说明  
 - 通知consume的SVC等级变化
+- 客户端暂时不需要处理，存储即可
 
 #### 通知格式 
 - 事件 consumerLayersChanged
@@ -1190,6 +1193,8 @@ try {
 ### consumerScore
 #### 说明 
 - 通知comsuer的分数
+- 客户端暂时不需要处理
+
 #### 通知格式 
 - 事件 consumerScore
 - 参数
@@ -1208,7 +1213,8 @@ try {
 
 ### dataConsumerClosed
 #### 说明 
-- 通知有流退出了，需要关闭本地的comsumer对象 
+- 通知有消息流关闭了
+- 客户端行为：需要关闭本地的comsumer对象，dataConsumer.close() 
 
 #### 通知格式 
 - 事件 dataConsumerId
@@ -1223,7 +1229,7 @@ try {
 
 ### activeSpeaker
 #### 说明 
-- 通知当前正在讲话的用户 
+- 通知当前正在讲话的用户以及对应的音量
 
 #### 通知格式 
 - 事件 activeSpeaker

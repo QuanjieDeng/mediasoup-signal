@@ -140,13 +140,14 @@ class Client extends events.EventEmitter {
     log.debug(`message: onClientRequestCom ,client:${this.id} methed: ${JSON.stringify(methed)} `);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
+      callback("error",{errmsg:"user's room undefuned",errcode:1000});
       this.disconnect();
       return;
     }
     const rpccallback = (result) => {
       log.debug(`message: onClientRequestCom  client:${this.id} rpccallback-methed:${methed}`);
       if(result  == "timeout"){
-        callback("error",{data:{}});
+        callback("error",{errmsg:"rpc call timeout",errcode:1001});
       }else{
         var retEvent =  result.retEvent;
         var  data =  result.data;
@@ -170,7 +171,7 @@ class Client extends events.EventEmitter {
     const rpccallback = (result) => {
       log.debug(`message: onJoin client:${this.id} rpccallback:${JSON.stringify(result)}`);
       if(result  == "timeout"){
-        callback("error",{data:{}});
+        callback("error",{errmsg:"rpc call timeout",errcode:1001});
       }else{
         //通知房间内的其他用户有新用户加入
         this.notifyNewUserJoinRom();

@@ -27,11 +27,12 @@ exports.handleUserRequest=(roomid,userid,methed,message,callback)=>{
     const room =   rooms.getRoomById(roomid);
     if(!room){
       log.error(`messages: handleUserRequest can't  get  room by-roomid:${roomid}`);
-      callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:1002}});
+      callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:2001}});
       return;
     }
     room.handleUserRequest(userid,methed,message,callback);
   } catch (error) {
+    callback('callback',{retEvent:"error",data: {errmsg:"ea error!", errcode:2000}});
     log.error('message: error handleUserRequest, error:', error);
   }
 };

@@ -254,7 +254,7 @@ class Room extends events.EventEmitter {
 
 	async _createConsumer({ consumerPeer, producerPeer, producer })
 	{
-		log.info(`message: createConsumer consumerPeer:${consumerPeer.getid()} producerPeer:${producerPeer.getid()} producer:${producer.id}`);
+		log.info(`message: createConsumer consumerPeer:${consumerPeer.getid()} producerPeer:${producerPeer.getid()} producer:${producer.id} kind:${producer.kind}`);
 		// Optimization:
 		// - Create the server-side Consumer in paused mode.
 		// - Tell its Peer about it and wait for its response.
@@ -429,7 +429,7 @@ class Room extends events.EventEmitter {
         const user =   this.getClientById(userid);
         if(!user){
 			log.error(`user not find:${userid}`);
-            callback('callback',{retEvent:"error",data: {errmsg:"user not find", errcode:1003}});
+            callback('callback',{retEvent:"error",data: {errmsg:"user not find", errcode:2002}});
             return;
         }
 
@@ -515,8 +515,11 @@ class Room extends events.EventEmitter {
           case 'join':
 			{
 				log.info(`message: user:${userid} req  join room`);
-				if (user.joined)
-				throw new Error('Peer already joined');
+				if (user.joined){
+					log.error(`messages:  user:${userid} joined yet!`);
+					callback('callback',{retEvent:"error",data: {errmsg:"user joined", errcode:2003}});
+					return;
+				}
 				
 				const {
 				displayName,
@@ -565,8 +568,11 @@ class Room extends events.EventEmitter {
 					const { transportId, dtlsParameters } = message;
 					const transport = user._transports.get(transportId);
 
-					if (!transport)
-						throw new Error(`transport with id "${transportId}" not found`);
+					if (!transport){
+						log.error(`message: transport with id "${transportId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find transport", errcode:2003}});
+						return;
+					}
 
 					await transport.connect({ dtlsParameters });
 
@@ -580,8 +586,11 @@ class Room extends events.EventEmitter {
 					const { transportId } =  message;
 					const transport =   user._transports.get(transportId);
 	
-					if (!transport)
-						throw new Error(`transport with id "${transportId}" not found`);
+					if (!transport){
+						log.error(`message: transport with id "${transportId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find transport", errcode:2003}});
+						return;
+					}
 	
 					const iceParameters = await transport.restartIce();
 	
@@ -595,15 +604,21 @@ class Room extends events.EventEmitter {
 			  	{
 					log.info(`message user:${userid} req produce`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { transportId, kind, rtpParameters } =  message;
 					let { appData } = message;
 					const transport =  user._transports.get(transportId);
 
-					if (!transport)
-						throw new Error(`transport with id "${transportId}" not found`);
+					if (!transport){
+						log.error(`message: transport with id "${transportId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find transport", errcode:2004}});
+						return;
+					}
 
 					// Add peerId into appData to later get the associated Peer during
 					// the 'loudest' event of the audioLevelObserver.
@@ -670,14 +685,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req closeProducer`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { producerId } =   message;
 					const producer = user._producers.get(producerId);
 
-					if (!producer)
-						throw new Error(`producer with id "${producerId}" not found`);
+					if (!producer){
+						log.error(`message: producerId with id "${producerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find producer", errcode:2004}});
+						return;
+					}
 
 					producer.close();
 
@@ -692,14 +713,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req pauseProducer`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { producerId } =   message;
 					const producer = user._producers.get(producerId);
 
-					if (!producer)
-						throw new Error(`producer with id "${producerId}" not found`);
+					if (!producer){
+						log.error(`message: producer with id "${producerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find producer", errcode:2004}});
+						return;
+					}
 
 					await producer.pause();
 
@@ -710,14 +737,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req resumeProducer`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { producerId } =  message;
 					const producer = user._producers.get(producerId);
 
-					if (!producer)
-						throw new Error(`producer with id "${producerId}" not found`);
+					if (!producer){
+						log.error(`message: producer with id "${producerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find producer", errcode:2004}});
+						return;
+					}
 
 					await producer.resume();
 
@@ -729,14 +762,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req pauseConsumer`);
 					// Ensure the Peer is joined.
-					if (!user._joined)
-						throw new Error('Peer not yet joined');
+					if (!user._joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 	
 					const { consumerId } =   message;
 					const consumer =   user._consumers.get(consumerId);
 	
-					if (!consumer)
-						throw new Error(`consumer with id "${consumerId}" not found`);
+					if (!consumer){
+						log.error(`message: consumer with id "${consumerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2004}});
+						return;
+					}
 	
 					await consumer.pause();
 	
@@ -749,14 +788,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req resumeConsumer`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { consumerId } =   message;
 					const consumer =   user._consumers.get(consumerId);
 
-					if (!consumer)
-						throw new Error(`consumer with id "${consumerId}" not found`);
+					if (!consumer){
+						log.error(`message: consumer with id "${consumerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2004}});
+						return;
+					}
 
 					await consumer.resume();
 
@@ -768,14 +813,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req setConsumerPreferredLayers`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 	
 					const { consumerId, spatialLayer, temporalLayer } =  message;
 					const consumer =  user._consumers.get(consumerId);
 	
-					if (!consumer)
-						throw new Error(`consumer with id "${consumerId}" not found`);
+					if (!consumer){
+						log.error(`message: consumer with id "${consumerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2004}});
+						return;
+					}
 	
 					await consumer.setPreferredLayers({ spatialLayer, temporalLayer });
 	
@@ -788,14 +839,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req setConsumerPriority`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 
 					const { consumerId, priority } =  message;
 					const consumer = user._consumers.get(consumerId);
 
-					if (!consumer)
-						throw new Error(`consumer with id "${consumerId}" not found`);
+					if (!consumer){
+						log.error(`message: consumer with id "${consumerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2004}});
+						return;
+					}
 
 					await consumer.setPriority(priority);
 
@@ -807,14 +864,20 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req requestConsumerKeyFrame`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 	
 					const { consumerId } =  message;
 					const consumer = user._consumers.get(consumerId);
 	
-					if (!consumer)
-						throw new Error(`consumer with id "${consumerId}" not found`);
+					if (!consumer){
+						log.error(`message: consumer with id "${consumerId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2004}});
+						return;
+					}
 	
 					await consumer.requestKeyFrame();
 	
@@ -826,8 +889,11 @@ class Room extends events.EventEmitter {
 				{
 					log.info(`message user:${userid} req produceData`);
 					// Ensure the Peer is joined.
-					if (!user.joined)
-						throw new Error('Peer not yet joined');
+					if (!user.joined){
+						log.error(`message: Peer not yet joined`);
+						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
+						return;
+					}
 	
 					const {
 						transportId,
@@ -839,8 +905,11 @@ class Room extends events.EventEmitter {
 	
 					const transport = user._transports.get(transportId);
 	
-					if (!transport)
-						throw new Error(`transport with id "${transportId}" not found`);
+					if (!transport){
+						log.error(`message: transport with id "${transportId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find transport", errcode:2004}});
+						return;
+					}
 	
 					const dataProducer = await transport.produceData(
 						{
@@ -892,8 +961,11 @@ class Room extends events.EventEmitter {
 					const { transportId } = message;
 					const transport =user._transports.get(transportId);
 	
-					if (!transport)
-						throw new Error(`transport with id "${transportId}" not found`);
+					if (!transport){
+						log.error(`message: transport with id "${transportId}" not found`);
+						callback('callback',{retEvent:"error",data: {errmsg:"can't find transport", errcode:2003}});
+						return;
+					}
 	
 					const stats = await transport.getStats();
 	
@@ -912,8 +984,11 @@ class Room extends events.EventEmitter {
 				const { producerId } =   message;
 				const producer = user._producers.get(producerId);
 
-				if (!producer)
-					throw new Error(`producer with id "${producerId}" not found`);
+				if (!producer){
+					log.error(`message: producer with id "${producerId}" not found`);
+					callback('callback',{retEvent:"error",data: {errmsg:"can't find producer", errcode:2003}});
+					return;
+				}
 
 				const stats = await producer.getStats();
 
@@ -930,8 +1005,11 @@ class Room extends events.EventEmitter {
 				const { consumerId } =   message;
 				const consumer =  user._consumers.get(consumerId);
 
-				if (!consumer)
-					throw new Error(`consumer with id "${consumerId}" not found`);
+				if (!consumer){
+					log.error(`message: consumer with id "${consumerId}" not found`);
+					callback('callback',{retEvent:"error",data: {errmsg:"can't find consumer", errcode:2003}});
+					return;
+				}
 
 				const stats = await consumer.getStats();
 				var  resp = {
@@ -947,8 +1025,11 @@ class Room extends events.EventEmitter {
 				const { dataProducerId } =   message;
 				const dataProducer =   user._dataProducers.get(dataProducerId);
 
-				if (!dataProducer)
-					throw new Error(`dataProducer with id "${dataProducerId}" not found`);
+				if (!dataProducer){
+					log.error(`message: dataProducer with id "${dataProducerId}" not found`);
+					callback('callback',{retEvent:"error",data: {errmsg:"can't find dataProducer", errcode:2003}});
+					return;
+				}
 
 				const stats = await dataProducer.getStats();
 				var  resp = {
@@ -964,8 +1045,11 @@ class Room extends events.EventEmitter {
 				const { dataConsumerId }  =  message;
 				const dataConsumer = user._dataConsumers.get(dataConsumerId);
 
-				if (!dataConsumer)
-					throw new Error(`dataConsumer with id "${dataConsumerId}" not found`);
+				if (!dataConsumer){
+					log.error(`message: dataConsumer with id "${dataConsumerId}" not found`);
+					callback('callback',{retEvent:"error",data: {errmsg:"can't find dataConsumer", errcode:2003}});
+					return;
+				}
 
 				const stats = await dataConsumer.getStats();
 				var  resp = {

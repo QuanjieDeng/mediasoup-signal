@@ -137,14 +137,14 @@ class Client extends events.EventEmitter {
       this.emit('disconnect');
   }
   onClientRequestCom(methed,message,callback){
-    log.debug(`message: onClientRequestCom ,methed: ${JSON.stringify(methed)} `);
+    log.debug(`message: onClientRequestCom ,client:${this.id} methed: ${JSON.stringify(methed)} `);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
       this.disconnect();
       return;
     }
     const rpccallback = (result) => {
-      log.debug(`message: onClientRequestCom rpccallback-methed:${methed}`);
+      log.debug(`message: onClientRequestCom  client:${this.id} rpccallback-methed:${methed}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{
@@ -160,7 +160,7 @@ class Client extends events.EventEmitter {
   onJoin(message,callback){
     log.debug(`message: user:${this.id} req  join room`);
     if (this.room === undefined) {
-      log.error(`message: onClientRequestCom for user in undefined room user: ${this.user}`);
+      log.error(`message: onClientRequestCom client:${this.id}  for user in undefined room user: ${this.user}`);
       this.disconnect();
       return;
     }
@@ -168,7 +168,7 @@ class Client extends events.EventEmitter {
     this.device = message.data.device;
 
     const rpccallback = (result) => {
-      log.debug(`message: onJoin rpccallback:${JSON.stringify(result)}`);
+      log.debug(`message: onJoin client:${this.id} rpccallback:${JSON.stringify(result)}`);
       if(result  == "timeout"){
         callback("error",{data:{}});
       }else{

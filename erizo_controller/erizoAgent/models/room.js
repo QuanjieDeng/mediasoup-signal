@@ -111,7 +111,7 @@ class Room extends events.EventEmitter {
 	log.debug(`sendMsgToClient-ec_id:${ec_id} clientId:${clientId} methed:${methed} msg:${msg}`);
 	
     await this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args, { callback(resp) {
-		log.debug(`sendMsgToClient rpccallback: resp:${JSON.stringify(resp)} methed:${methed} clientid:${clientId}`);
+		log.debug(`sendMsgToClient clientId:${clientId} rpccallback: resp:${JSON.stringify(resp)} methed:${methed} clientid:${clientId}`);
 		if (resp === 'timeout') {
 			callback("error",{data:{}});
 		} else {
@@ -389,7 +389,7 @@ class Room extends events.EventEmitter {
 					producerPaused : consumer.producerPaused
 				},async (ret,msg)=>{
 					if(ret == "success"){
-						log.info(`messages resume consumer:${consumer.id}`);
+						log.info(`messages clientid:${consumerPeer.getid()} resume consumer:${consumer.id}`);
 						await consumer.resume();
 						consumerPeer.notify(
 							'consumerScore',

@@ -407,12 +407,12 @@ exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
   const room = rooms.getRoomWithClientId(clientId);
   if (room) {
     const socketiocallback = (event,message) => {
-      log.debug(`message: forwordSingleMsgToClient methed:${methed} socketiocallback:-event:${event} --${JSON.stringify(event)} message:${JSON.stringify(message)}`);
+      log.debug(`message: forwordSingleMsgToClient clientId:${clientId} methed:${methed} socketiocallback:-event:${event} --${JSON.stringify(event)} message:${JSON.stringify(message)}`);
       callback(event,message);
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
   }else{
-    log.error(`messages: forwordSingleMsgToClient can't  get  room by client:${clientId}`);
+    log.error(`messages: forwordSingleMsgToClient   can't  get  room by client:${clientId}`);
     callback("error",{data:{}});
   }
 };

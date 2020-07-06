@@ -38,23 +38,7 @@ config.mediasoup.webRtcTransportOptions = 		{
 ```
 - plainTransport监听地址
 
-
-
-config.mediasoup.webRtcTransportOptions = 		{
-    listenIps :
-    [
-        {
-            ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.109',
-            announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
-        }
-    ],
-    initialAvailableOutgoingBitrate : 1000000,
-    minimumAvailableOutgoingBitrate : 600000,
-    maxSctpMessageSize              : 262144,
-    // Additional options that are not part of WebRtcTransportOptions.
-    maxIncomingBitrate              : 1500000
-};
-
+```
 config.mediasoup.plainTransportOptions = 		{
     listenIp :
     {
@@ -64,6 +48,9 @@ config.mediasoup.plainTransportOptions = 		{
     maxSctpMessageSize : 262144,
     enableSrtp : false
 };
+
+
+```
 
 ## 启动
 分为nuve  ec,ea

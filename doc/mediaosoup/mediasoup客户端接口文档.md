@@ -114,11 +114,8 @@
  "roomId":"12123123" //房间ID
 }
 
-失败的时候的返回
-{
-    "errmsg":"",
-    "errcode":1002
-}
+失败的时候的返回错误信息字符串
+'Invalid host'
 
 ```
 
@@ -145,9 +142,19 @@
 ```
 {
     "errmsg":"",
-    "errcode":1002
+    "errcode":1000
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+
 ### createWebRtcTransport
 #### 说明 
 - 请求创建WebRtcTransport,该接口最终会调用medisoup的接口创建一个WebRtcTransport
@@ -235,6 +242,17 @@
 }
 
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+
+
 ### join
 #### 说明 
 - join请求，表明用户请求加入到房间
@@ -290,6 +308,19 @@
 }
 
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户已经加入 |
+
+
 ### connectWebRtcTransport
 #### 说明
 - 客户端需要等待本地的transport抛出事件connect后才可以调用该接口
@@ -314,6 +345,9 @@
 }
 ```
 
+
+
+
 #### 返回示例
 - 事件 success/error  
 - 参数
@@ -328,6 +362,18 @@
     "errcode":1002
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到transport |
+
 ### produce
 #### 说明
 - produce请求表明客户端已经做好了推流的准备,produce不等待客户端的sendTransport抛出produce事件之后才可以调用
@@ -406,6 +452,20 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	}
 }
 ```
+
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到transport |
+
 ### closeProducer
 #### 说明
 - 当麦克风或者时视频采集设备连接失败或者时被禁用，则需要发送该事件关闭对应的producer
@@ -428,6 +488,19 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到transport |
+
 ### pauseProducer
 #### 说明
 - 暂时静音或者暂时关闭视频,则需要发送该事件到服务器 
@@ -451,6 +524,19 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到producer |
+
+
 ### resumeProducer
 #### 说明
 - 重新打开音频或者时视频 
@@ -474,7 +560,17 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
 
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到producer |
 ### pauseConsumer
 #### 说明
 - 请求暂停consumer
@@ -498,6 +594,17 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到consume |
 
 ### resumeConsumer
 #### 说明
@@ -522,6 +629,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到consume |
+
 
 ### restartIce
 #### 说明
@@ -539,7 +658,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 }
 
 #### 返回示例
-- 事件 success  
+- 事件 success/error
 - 参数
 ```
 //成功返回
@@ -549,6 +668,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     }
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到对应的transport |
+
 
 
 ### setConsumerPreferredLayers
@@ -570,7 +701,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 ```
 
 #### 返回示例
-- 事件 success  
+- 事件 success /error
 - 参数
 ```
 //成功返回
@@ -578,6 +709,20 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+
+
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到consume |
 
 ### setConsumerPriority
 #### 说明
@@ -598,7 +743,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 ```
 
 #### 返回示例
-- 事件 success  
+- 事件 success/error
 - 参数
 ```
 //成功返回
@@ -606,6 +751,17 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到consume |
 
 ### requestConsumerKeyFrame
 #### 说明
@@ -624,7 +780,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 ```
 
 #### 返回示例
-- 事件 success  
+- 事件 success/error
 - 参数
 ```
 //成功返回
@@ -632,6 +788,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
     "data":{}
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到consume |
 
 ### produceData
 #### 说明
@@ -660,7 +828,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -669,6 +837,21 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	}
 }
 ```
+
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 用户还没有加入房间 |
+| 2004  | 找不到对应的transport |
+
+
 ### getTransportStats
 #### 说明
 - 请求Transport状态
@@ -685,7 +868,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -725,6 +908,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 }
 ```
 
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到transport |
+
 ### getProducerStats
 #### 说明
 - 请求生产者状态
@@ -741,7 +936,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -770,6 +965,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	]
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到produce |
+
 
 ### getConsumerStats
 #### 说明
@@ -787,7 +994,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -816,6 +1023,19 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	]
 }
 ```
+
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到consume |
+
 ### getDataProducerStats
 #### 说明
 - 请求消息生产者状态
@@ -832,7 +1052,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -848,6 +1068,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	]
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到dataproduce |
+
 ### getDataConsumerStats
 #### 说明
 - 请求消息消费者状态
@@ -864,7 +1096,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 ```
 #### 返回示例
-- 事件 success
+- 事件 success/error
 - 参数 
 ```
 {
@@ -880,6 +1112,18 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 	]
 }
 ```
+
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+| 1000  | 用户的房间未初始化 |
+| 1001  | 到EA的rpc请求超时 |
+| 2000  | EA出现异常 |
+| 2001  | 到EA找不到room |
+| 2002  | 到EA找不到user |
+
+| 2003  | 找不到dataconsume |
+
 ### applyNetworkThrottle
 #### 说明
 - 请求应用网络带宽控制

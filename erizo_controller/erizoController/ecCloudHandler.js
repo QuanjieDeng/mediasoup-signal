@@ -44,6 +44,7 @@ exports.EcCloudHandler = (spec) => {
       });
 
       if (newAgent === true) {
+        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip}`);
         // New agent
         agents[agent.info.id] = agent;
         agents[agent.info.id].timeout = 0;

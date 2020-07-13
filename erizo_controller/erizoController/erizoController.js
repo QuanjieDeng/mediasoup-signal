@@ -92,6 +92,7 @@ Object.keys(opt.options).forEach((prop) => {
 const logger = require('./../common/logger').logger;
 const amqper = require('./../common/amqper');
 const { cli } = require('winston/lib/winston/config');
+const { replace } = require('sinon');
 const ecch = require('./ecCloudHandler').EcCloudHandler({ amqper });
 const nuve = require('./nuveProxy').NuveProxy({ amqper });
 const Rooms = require('./models/Room').Rooms;
@@ -285,10 +286,19 @@ const listen =  () => {
   io.sockets.on('connection', (socket) => {
     log.info(`message: socket connected, socketId: ${socket.id}`);
 
+    if(socket.handshake.headers['x-forwarded-for'] != null){  
+       ip = socket.handshake.headers['x-forwarded-for'];
+    }else{  
+       ip = socket.handshake.address;
+    }
+    ip = ip.replace('::ffff:', '');
+    log.info(`message: socket connected, client's  ip: ${ip}`);
+
     const channel = new Channel(socket, nuve);
 
     channel.on('connected',async (token, options, callback) => {
       options = options || {};
+      options.ip = ip;
       try {
         const rpccallback = async(roomid, agentId, routerId) => {
           if(roomid != "timeout"){

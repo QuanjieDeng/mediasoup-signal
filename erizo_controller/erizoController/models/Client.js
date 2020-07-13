@@ -23,7 +23,7 @@ class Client extends events.EventEmitter {
   }
 
   static async create({ channel, token, options, room}){
-		log.info('create() [client]');
+		log.info(`create() [client]ip:${options.ip}`);
 		return new Client(
 			{
 				channel,

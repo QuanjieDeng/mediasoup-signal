@@ -2,6 +2,7 @@ const erizoAgent = require('./../erizoAgent');
 const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManager;
 const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('RPCPublic');
+const ping = require ("net-ping");
 let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 const rooms =  erizoAgent.getRooms();
@@ -65,5 +66,22 @@ exports.rovMessage=  (args, callback) => {
 
 exports.getErizoAgents = (callback) =>{
   erizoAgent.getReporter().getErizoAgent(callback);
+};
+
+
+//测算ping值
+exports.getPingConst = (ip,callback) =>{
+  const session = ping.createSession();
+  session.pingHost(ip, (error, target, sent, rcvd) => {
+    if (error) {
+      log.error(`${target} failed:${error.toString()}`);
+      callback('callback',{retEvent:"error"});
+    } else {
+      const spent = rcvd.getTime() - sent.getTime();
+      log.info(`${target} ok, spent: ${spent}ms`);
+      callback('callback',{retEvent:"sucess",spent:spent});
+    }
+  })
+  
 };
   

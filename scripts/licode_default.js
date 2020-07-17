@@ -87,7 +87,8 @@ config.erizoController.reportSubscriptions = {
 
 // Erizo Controller Cloud Handler policies are in erizo_controller/erizoController/ch_policies/ folder
 config.erizoController.cloudHandlerPolicy = 'default_policy.js'; // default value: 'default_policy.js'
-
+config.erizoController.TTLBestForce = false; //强制开启TTLBest,开启后全部使用TTLBest模式
+config.erizoController.TTLBest = true;//开启后用户可选择使用TTL-BEST模式，否则使用默认的LOOP模式
 /*********************************************************
  ERIZO AGENT CONFIGURATION
 **********************************************************/

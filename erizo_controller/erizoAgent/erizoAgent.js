@@ -196,7 +196,6 @@ async function run()
 
 
 exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
-  log.info("getOrCreateRoom--------");
 	let room = rooms.getRoomById(roomid);
 
 	// If the Room does not exist create a new one.

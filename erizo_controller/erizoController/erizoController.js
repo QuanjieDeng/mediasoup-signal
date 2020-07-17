@@ -37,6 +37,9 @@ global.config.erizoController.recording_path =
 global.config.erizoController.exitOnNuveCheckFail =
   global.config.erizoController.exitOnNuveCheckFail || false;
 
+global.config.erizoController.TTLBestForce = global.config.erizoController.TTLBestForce || false
+global.config.erizoController.TTLBest = global.config.erizoController.TTLBest || false
+
 
 // Parse command line arguments
 const getopt = new Getopt([
@@ -280,6 +283,22 @@ const updateMyState = () => {
   nuve.setInfo({ id: myId, state: myState });
 };
 
+const _getEAPolicy = async (ineapolicy)=>{
+  log.info(`_getEAPolicy ineapolicy:${ineapolicy} TTLBestForce:${global.config.erizoController.TTLBestForce} TTLBest:${global.config.erizoController.TTLBest}`);
+  if(!ineapolicy){
+    ineapolicy = "LOOP";
+  }
+
+  let newpolicy = ineapolicy;
+  if(global.config.erizoController.TTLBestForce){
+    return "TTL-BEST";
+  }
+  if(!global.config.erizoController.TTLBest && ineapolicy=="TTL-BEST"){
+    return "LOOP";
+  }
+
+  return newpolicy;
+}
 
 
 const listen =  () => {
@@ -299,29 +318,71 @@ const listen =  () => {
     channel.on('connected',async (token, options, callback) => {
       options = options || {};
       options.ip = ip;
-      try {
-        const rpccallback = async(roomid, agentId, routerId) => {
-          if(roomid != "timeout"){
-            log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
-
-            const room =  await rooms.getOrCreateRoom(myId,agentId, token.room);
-            const client = await room.createClient(channel, token, options);
-
-            callback('success', {
-              roomId: room.id,
-              clientId: client.id });
-          }else{
-            log.error(`message: Room：${id} can't get mediaosupworker!`);
-            callback('error', {
-              errmsg: "get mediasoup worker failed",
-              errcode:1002
-            });
+      options.eapolicy = await _getEAPolicy(options.eapolicy);
+      const room =  await rooms.getRoomById(token.room);
+      if(room){//房间已经存在
+        log.info(`message: room:${token.room}  exist yet,eapolicy:${room.eapolicy}`);
+        if( room.eapolicy  === "LOOP"){//一个房间就一个router不需要再次申请router
+          const client = await room.createClient(channel, token, options,room.erizoAgentId,room.routerId);
+          callback('success', {
+            roomId: room.id,
+            clientId: client.id });
+        }else if(room.eapolicy  === "TTL-BEST"){//每次都需要申请
+          try {
+            const rpccallback = async(roomid, agentId, routerId) => {
+              if(roomid != "timeout"){
+                log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
+                //添加新的ea-router对
+                room.addRouter(agentId,routerId);
+                //创建新的用户
+                const client = await room.createClient(channel, token, options,agentId,routerId);
+    
+                callback('success', {
+                  roomId: room.id,
+                  clientId: client.id });
+              }else{
+                log.error(`message: Room：${id} can't get mediaosupworker!`);
+                callback('error', {
+                  errmsg: "get mediasoup worker failed",
+                  errcode:1002
+                });
+              }
+            };
+            ecch.getMeiasoupWorker(token.room,ip, options.eapolicy,myId,rpccallback);
+          } catch (e) {
+            log.info('message: error creating Room or Client, error:', e);
           }
-        };
-        ecch.getMeiasoupWorker(token.room,myId,rpccallback);
-      } catch (e) {
-        log.info('message: error creating Room or Client, error:', e);
+
+        }
+
+      }else{//房间不存在,则走统一的流程，全部都需要去申请
+        log.info(`message: room:${token.room}      not  exist,eapolicy:${options.eapolicy}`);
+        try {
+          const rpccallback = async(roomid, agentId, routerId) => {
+            if(roomid != "timeout"){
+              log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
+
+              const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
+              const client = await room.createClient(channel, token, options,agentId,routerId);
+  
+              callback('success', {
+                roomId: room.id,
+                clientId: client.id });
+            }else{
+              log.error(`message: Room：${id} can't get mediaosupworker!`);
+              callback('error', {
+                errmsg: "get mediasoup worker failed",
+                errcode:1002
+              });
+            }
+          };
+          ecch.getMeiasoupWorker(token.room,ip, options.eapolicy,myId,rpccallback);
+        } catch (e) {
+          log.info('message: error creating Room or Client, error:', e);
+        }
       }
+
+
     });
 
     channel.on('reconnected', (clientId) => {

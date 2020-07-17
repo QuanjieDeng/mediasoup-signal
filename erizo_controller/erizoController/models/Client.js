@@ -9,11 +9,13 @@ const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('Client');
 
 class Client extends events.EventEmitter {
-  constructor({channel, token, options, room}) {
+  constructor({channel, token, options, room,agentId,routerId}) {
     super();
     this.channel = channel;
     this.room = room;
     this.token = token;
+    this.agentId = agentId;
+    this.routerId = routerId
     this.id = uuidv4();
     this.options = options;
     this.socketEventListeners = new Map();
@@ -22,14 +24,16 @@ class Client extends events.EventEmitter {
     this.state = 'sleeping'; // ?
   }
 
-  static async create({ channel, token, options, room}){
+  static async create({ channel, token, options, room,agentId,routerId}){
 		log.info(`create() [client]ip:${options.ip}`);
 		return new Client(
 			{
 				channel,
         token,
         options,
-				room
+        room,
+        agentId,
+        routerId
 			});
     }
 
@@ -133,7 +137,7 @@ class Client extends events.EventEmitter {
       }
       //通知其他用户我的断开
       this.notifyUserLeaveRom();
-      this.room.removeClient(this.id);
+      this.room.removeClient(this.id,this.agentId);
       this.emit('disconnect');
   }
   onClientRequestCom(methed,message,callback){
@@ -154,7 +158,7 @@ class Client extends events.EventEmitter {
         callback(retEvent,data);
       }
     };
-    this.room.processReqMessageFromClient(this.room.id, this.id, methed,message.data, rpccallback.bind(this));
+    this.room.processReqMessageFromClient(this.room.id, this.id,this.agentId, methed,message.data, rpccallback.bind(this));
   }
 
 
@@ -188,7 +192,7 @@ class Client extends events.EventEmitter {
         callback(retEvent,resp);
       }
     };
-    this.room.processReqMessageFromClient(this.room.id, this.id, "join",message.data, rpccallback.bind(this));
+    this.room.processReqMessageFromClient(this.room.id, this.id,this.agentId, "join",message.data, rpccallback.bind(this));
   }
 }
 

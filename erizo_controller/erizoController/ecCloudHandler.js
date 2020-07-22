@@ -167,10 +167,10 @@ exports.EcCloudHandler = (spec) => {
       });
       
       if(agentlist.length == 0){
-        log.warn(`message: EApingÖµËÑ¼¯Ö®ºóagentlist³¤¶ÈÎª0`);
+        log.warn(`message: EApingå€¼æœé›†ä¹‹åagentlisté•¿åº¦ä¸º0`);
         return agentQueue
       }
-      agentlist.sort((a,b)=>{b.spent- a.spent});
+      agentlist.sort((a,b)=>{return a.spent- b.spent});
       var earpcid =`ErizoAgent_${ agentlist[0].id}`;
       return earpcid;
     }

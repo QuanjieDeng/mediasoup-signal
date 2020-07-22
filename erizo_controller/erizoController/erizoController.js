@@ -474,11 +474,20 @@ exports.deleteRoom = (roomId, callback) => {
 exports.getContext = () => rooms;
 
 exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
-  log.debug(`message: forwordSingleMsgToClient, clientId:${clientId} methed:${methed} msg:${JSON.stringify(msg)}`);
+  var  block_meth = [
+		"activeSpeaker",
+	  ];
+	  var index =  block_meth.indexOf(methed);
+	  if(index >= 0 ){
+
+	  }else{
+      log.debug(`message: forwordSingleMsgToClient, clientId:${clientId} methed:${methed} msg:${JSON.stringify(msg)}`);
+
+	  }
   const room = rooms.getRoomWithClientId(clientId);
   if (room) {
     const socketiocallback = (event,message) => {
-      log.debug(`message: forwordSingleMsgToClient clientId:${clientId} methed:${methed} socketiocallback:-event:${event} --${JSON.stringify(event)} message:${JSON.stringify(message)}`);
+      // log.debug(`message: forwordSingleMsgToClient clientId:${clientId} methed:${methed} socketiocallback:-event:${event} --${JSON.stringify(event)} message:${JSON.stringify(message)}`);
       callback(event,message);
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));

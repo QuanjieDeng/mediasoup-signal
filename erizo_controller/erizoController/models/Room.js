@@ -1,14 +1,14 @@
 
 const events = require('events');
 const { cli } = require('winston/lib/winston/config');
-// const controller = require('../roomController').RoomController;
+const SFUConManager  = require('../sfuConManager').SFUConManager;
 const Client = require('./Client').Client;
 const logger = require('./../../common/logger').logger;
 
 const log = logger.getLogger('Room');
 
 class Room extends events.EventEmitter {
-  constructor({erizoControllerId, amqper,agentId,routerId, ecch, id,eapolicy}) {
+  constructor({erizoControllerId, amqper,agentId,routerId, ecch, id,eapolicy,sfum}) {
     super();
     this.clients = new Map();
     this.id = id;
@@ -29,13 +29,17 @@ class Room extends events.EventEmitter {
     key为eaid+routerid组合 value为结构体存储具体的ID信息
 
     */
-    this.AgentRouterMap = new Map();
-    this.AgentRouterMap.set(`${agentId}@${routerId}`,{agentId:agentId,routerId:routerId});
+    // this.AgentRouterMap = new Map();
+    // this.AgentRouterMap.set(`${agentId}@${routerId}`,{agentId:agentId,routerId:routerId});
+    this.sfum =  sfum;
 
   }
 
   static async create({ erizoControllerId, amqper,agentId,routerId, ecch, id,eapolicy}){
-		log.info('create() [roomId:%s]', id);
+    log.info('create() [roomId:%s]', id);
+    
+    const sfum =  await SFUConManager.create({id,amqper, ecch, erizoControllerId});
+    sfum.addRouter(agentId,routerId);
 		return new Room(
 			{
 				erizoControllerId,
@@ -44,28 +48,33 @@ class Room extends events.EventEmitter {
         routerId,
         ecch,
         id,
-        eapolicy
+        eapolicy,
+        sfum
 			});
   }
 
-  addRouter(agentId,routerId){
-    var  ea_router_key =  `${agentId}@${routerId}`;
-    if(this.AgentRouterMap.has(ea_router_key)){
-      log.info(`message: ea-router:${ea_router_key} exiest yet!`);
-    }else{
-      log.info(`message: add  new ea-router:${ea_router_key}`);
-      /*
-      在这里开启每个已经存在的router到新的router之间的piptransport级联
-      */
-     this.AgentRouterMap.forEach((v,k)=>{
-       log.info(`message start pipRouter from:${v.routerId}  to:${routerId}`);
+  // addRouter(agentId,routerId){
+  //   var  ea_router_key =  `${agentId}@${routerId}`;
+  //   if(this.AgentRouterMap.has(ea_router_key)){
+  //     log.info(`message: ea-router:${ea_router_key} exiest yet!`);
+  //   }else{
+  //     log.info(`message: add  new ea-router:${ea_router_key}`);
+  //     /*
+  //     在这里开启每个已经存在的router到新的router之间的piptransport级联
+  //     */
+  //    this.AgentRouterMap.forEach((v,k)=>{
+  //      log.info(`message start pipRouter from:${v.routerId}  to:${routerId}`);
        
 
-     });
+  //    });
 
 
-     this.AgentRouterMap.set(ea_router_key,{agentId:agentId,routerId:routerId});
-    }
+  //    this.AgentRouterMap.set(ea_router_key,{agentId:agentId,routerId:routerId});
+  //   }
+  // }
+
+  addRouter(agentId,routerId){
+    this.sfum.addRouter(agentId,routerId);
   }
 
   getClientList({ excludePeer = undefined } = {}){
@@ -143,9 +152,9 @@ class Room extends events.EventEmitter {
 
 
   //就是对客户端的消息进行转发到EA 
-  processReqMessageFromClient (roomid, clientId,eaid,methed,msg, callback){
+  processReqMessageFromClient (roomid, clientId,clientname,eaid,methed,msg, callback){
 
-    const args = [roomid, clientId,methed, msg];
+    const args = [roomid, clientId,clientname,methed, msg];
     var   agentid = `ErizoAgent_${eaid}`;
     this.amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
   };

@@ -107,7 +107,7 @@ class Client extends events.EventEmitter {
     var msg= {
       data:{
         id          : this.id,
-        displayName : this.displayName,
+        displayName : this.user.name,
         device      : this.device
       }
     };
@@ -158,7 +158,7 @@ class Client extends events.EventEmitter {
         callback(retEvent,data);
       }
     };
-    this.room.processReqMessageFromClient(this.room.id, this.id,this.agentId, methed,message.data, rpccallback.bind(this));
+    this.room.processReqMessageFromClient(this.room.id, this.id,this.user.name,this.agentId, methed,message.data, rpccallback.bind(this));
   }
 
 
@@ -192,7 +192,7 @@ class Client extends events.EventEmitter {
         callback(retEvent,resp);
       }
     };
-    this.room.processReqMessageFromClient(this.room.id, this.id,this.agentId, "join",message.data, rpccallback.bind(this));
+    this.room.processReqMessageFromClient(this.room.id, this.id,this.user.name,this.agentId, "join",message.data, rpccallback.bind(this));
   }
 }
 

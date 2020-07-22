@@ -4,25 +4,30 @@ const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('Client');
 
 class Client extends events.EventEmitter {
-  constructor({clientid, room}) {
+  constructor({clientid,clientname, room}) {
     super();
     this.room = room;
     this.id = clientid;
+    this.name = clientname;
     this.data = {};
     this._transports = new Map();
     this._producers =   new Map();
     this._consumers =  new Map();
     this._dataProducers = new Map();
     this._dataConsumers = new Map();
+
+    //这里我们记录client所在的EA，如果和本地不同则说明该client来自其他的EA级联结果
+    this.eaid = undefined;
   }
 
 
-  static async create({ room, clientid }){
+  static async create({ room, clientid,clientname }){
     log.info('create() [clientid:%s]', clientid);
 
     return new Client(
         {
             clientid,
+            clientname,
             room
         });
    }

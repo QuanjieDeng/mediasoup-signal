@@ -138,7 +138,7 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
 } else {
   publicIP = global.config.erizoAgent.publicIP;
 }
-
+global.config.erizoAgent.publicIP =publicIP ;
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
 const Room =  require('./models/room').Room;

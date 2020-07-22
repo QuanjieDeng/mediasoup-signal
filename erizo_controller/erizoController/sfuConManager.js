@@ -15,6 +15,10 @@ class SFUConManager{
     this.erizoControllerId = erizoControllerId;
     this.eventListeners = [];
     this.AgentRouterMap = new Map();
+    /*
+    记录该 ea-router对下 客户端的数量
+    */
+    this.AgentRouterClients = new Map();
 
   }
   
@@ -28,6 +32,9 @@ class SFUConManager{
       在这里开启每个已经存在的router到新的router之间的piptransport级联
       */
      this.AgentRouterMap.forEach((v,k)=>{
+       if(this._getEARouterClients(k)  <=0){
+         return;
+       }
        log.info(`message start pipRouter from:${v.routerId}  to:${routerId}`);
        //发送rpc请求到from 告诉他有你开启piptransport的建立过程
        var from_ea_id = `ErizoAgent_${v.agentId}`;
@@ -55,32 +62,44 @@ class SFUConManager{
 			});
     }
 
+  addClient(agentid,routerid){
+    var  ea_router_key =  `${agentid}@${routerid}`;
+    if(this.AgentRouterClients.has(ea_router_key)){
+      var  conut =  this.AgentRouterClients.get(ea_router_key);
+      conut +=1;
+      this.AgentRouterClients.set(ea_router_key,conut);
+    }else{
+      this.AgentRouterClients.set(ea_router_key,1);
+    }
+  }
 
-  //保留
-  dispatchEvent = (type, evt) => {
-    eventListeners.forEach((eventListener) => {
-      eventListener(type, evt);
+  delClient(agentid,routerid){
+    var  ea_router_key =  `${agentid}@${routerid}`;
+    if(this.AgentRouterClients.has(ea_router_key)){
+      var  conut =  this.AgentRouterClients.get(ea_router_key);
+      conut  = conut-1;
+      this.AgentRouterClients.set(ea_router_key,conut);
+    }
+  }
+
+
+  _getEARouterClients(key){
+    if(this.AgentRouterClients.has(key)){
+      var  conut =  this.AgentRouterClients.get(key);
+      return conut;
+    }
+    return  0;
+  }
+
+  //获取当前room所有的EA列表
+  getEAlist(){
+    const ealist = [];
+    this.AgentRouterMap.forEach((v,k)=>{
+      ealist.push(v.agentId);
     });
-  };
+    return ealist;
+  }
 
-  addEventListener = (eventListener) => {
-    eventListeners.push(eventListener);
-  };
-
-//   //就是对客户端的消息进行转发到EA 
-//   processReqMessageFromClient = (roomid, clientId,methed,msg, callback) => {
-//     const args = [roomid, clientId,methed, msg];
-//     var   agentid = `ErizoAgent_${erizoAgentId}`;
-//     amqper.callRpc(agentid, 'handleUserRequest', args, { callback });
-//   };
-
-//   //通知EA删除用户
-//   removeClient = (roomid,clientId) => {
-//     log.info(`message: removeClient clientId ${clientId}`);
-//     const args = [roomid, clientId];
-//     var   agentid = `ErizoAgent_${erizoAgentId}`;
-//     amqper.callRpc(agentid, 'deleteUser', args);
-//   };
 
 };
 exports.SFUConManager = SFUConManager;

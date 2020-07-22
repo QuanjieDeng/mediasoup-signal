@@ -166,13 +166,47 @@ exports.createPipTransportProduce = (roomid,localpipetransportid,consumes,callba
 }
 
 
-exports.createPipTransportConsume = (roomid,localpipetransportid,callback) =>{
-  log.info(`message:createPipTransportConsume roomid:${roomid}  localpipetransportid:${localpipetransportid}`);
+exports.createPipTransportConsume = (roomid,localpipetransportid,remoteeaid,callback) =>{
+  log.info(`message:createPipTransportConsume roomid:${roomid}  localpipetransportid:${localpipetransportid} remoteeaid:${remoteeaid}`);
   const room =   rooms.getRoomById(roomid);
   if(!room){
     log.error(`messages: createPipTransportConsume can't  get  room by-roomid:${roomid}`);
     callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:2001}});
     return;
   }
-  room.createPipTransportConsume(localpipetransportid,callback);
+  room.createPipTransportConsume(localpipetransportid,remoteeaid,callback);
+}
+
+
+exports.closePipProduce = (roomid,localproduceid,callback) =>{
+  log.info(`message:closePipProduce roomid:${roomid}  localproduceid:${localproduceid}`);
+  const room =   rooms.getRoomById(roomid);
+  if(!room){
+    log.error(`messages: closePipProduce can't  get  room by-roomid:${roomid}`);
+    callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:2001}});
+    return;
+  }
+  room.closePipProduce(localproduceid,callback);
+}
+
+exports.pausePipProduce = (roomid,localproduceid,callback) =>{
+  log.info(`message:pausePipProduce roomid:${roomid}  localproduceid:${localproduceid}`);
+  const room =   rooms.getRoomById(roomid);
+  if(!room){
+    log.error(`messages: pausePipProduce can't  get  room by-roomid:${roomid}`);
+    callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:2001}});
+    return;
+  }
+  room.pausePipProduce(localproduceid,callback);
+}
+
+exports.resumePipProduce = (roomid,localproduceid,callback) =>{
+  log.info(`message:resumePipProduce roomid:${roomid}  localproduceid:${localproduceid}`);
+  const room =   rooms.getRoomById(roomid);
+  if(!room){
+    log.error(`messages: resumePipProduce can't  get  room by-roomid:${roomid}`);
+    callback('callback',{retEvent:"error",data: {errmsg:"can't find room", errcode:2001}});
+    return;
+  }
+  room.resumePipProduce(localproduceid,callback);
 }

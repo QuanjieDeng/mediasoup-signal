@@ -106,6 +106,7 @@ class Room extends events.EventEmitter {
     const client = await Client.create({channel, token, options, room,agentId,routerId});
     client.on('disconnect', this.onClientDisconnected.bind(this, client));
     this.clients.set(client.id, client);
+    this.sfum.addClient(agentId,routerId);
     return client;
   }
 
@@ -120,7 +121,8 @@ class Room extends events.EventEmitter {
     return this.clients.delete(id);
   }
 
-  onClientDisconnected() {
+  onClientDisconnected(client) {
+    this.sfum.delClient(client.agentId,client.routerId);
     if (this.clients.size === 0) {
       log.debug(`message: deleting empty room, roomId: ${this.id}`);
       this.emit('room-empty');
@@ -163,8 +165,14 @@ class Room extends events.EventEmitter {
   removeClientEA(roomid,clientId,agentId){
     log.info(`message: removeClient clientId ${clientId}`);
     const args = [roomid, clientId];
-    var   agentid = `ErizoAgent_${agentId}`;
-    this.amqper.callRpc(agentid, 'deleteUser', args);
+    const ealist = this.sfum.getEAlist();
+    ealist.forEach((v,index,arry)=>{
+      var   agentid = `ErizoAgent_${v}`;
+      this.amqper.callRpc(agentid, 'deleteUser', args);
+
+    });
+
+
   };
 
 }

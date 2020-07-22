@@ -29,8 +29,19 @@ class Room extends events.EventEmitter {
 	存储该该房间的关联piptransport  key:对端routerID  v:pipetransport对
 	*/
 	this._mapRouterPipeTransports =  new Map();
+	/*
+	存储该房间所有的PipeTransport
+	*/
 	this._mapPipeTransports =  new Map();
-	
+
+	/*
+	存储房间内的 piptransport.produce
+	*/
+	this._mapPipeProduces =  new Map();
+		/*
+	存储房间内的 piptransport.consume
+	*/
+	this._mapPipeConsumes =  new Map();
 
 	// Handle audioLevelObserver.
 	this._handleAudioLevelObserver();
@@ -730,11 +741,8 @@ class Room extends events.EventEmitter {
 						const  piptransportpair =   v;
 						const  local  =  piptransportpair[0];
 						const  remote  =  piptransportpair[1];
-						log.info(`message: 用户创建produce，为级联SFU创建consume remote:${piptransportpair}`);
-						log.info(`message: 用户创建produce，为级联SFU创建consume remote:${piptransportpair}`);
-						log.info(`message: 用户创建produce，为级联SFU创建consume remote:${v[0]}`);
-						log.info(`message: 用户创建produce，为级联SFU创建consume remote:${v[1]}`);
-						const  consumes  = await this._createPipeConsumer(user,producer,local);
+						log.info(`message: 用户创建produce，为级联SFU创建consume remote_eaid:${remote.eaid}`);
+						const  consumes  = await this._createPipeConsumer(user,producer,local,remote.eaid);
 						//调用remote所属EA，创建本地produce
 						var remoteea = `ErizoAgent_${remote.eaid}`;
 
@@ -1216,6 +1224,32 @@ class Room extends events.EventEmitter {
   setPipeTransport(piptransport){
 	this._mapPipeTransports.set(piptransport.id,piptransport);
   }
+  delPipeTransport(id){
+	this._mapPipeTransports.delete(id);
+  }
+
+
+  setPipProduce(produce){
+	this._mapPipeProduces.set(produce.id,produce);
+  }
+  getPipProduce(produceid){
+	return this._mapPipeProduces.get(produceid);
+  }
+
+  delPipProduce(produceid){
+	this._mapPipeProduces.delete(produceid);
+  }
+
+  setPipConsume(consume){
+	this._mapPipeConsumes.set(consume.id,consume);
+  }
+  getPipConsume(consumeid){
+	return this._mapPipeConsumes.get(consumeid);
+  }
+
+  delPipConsume(consumeid){
+	return this._mapPipeConsumes.delete(consumeid);
+  }
 
   /*
   处理SFU级联请求，收到该请求的room,说明在Router<---->的过程中，是作为发起端，主动发起整个串联的流程
@@ -1348,7 +1382,10 @@ class Room extends events.EventEmitter {
 									{
 									  producerId : producer.id
 									});
-								//?这里是不是需要存储本地的consume？暂时不存储
+								this.setPipConsume(pipeRemoteConsumer);
+								// Set Consumer events.
+								this._setPipeConsumeEvents(pipeRemoteConsumer,agentId);
+
 								var  newConsume = {
 									producerid:producer.id,
 									kind:pipeRemoteConsumer.kind,
@@ -1407,7 +1444,7 @@ class Room extends events.EventEmitter {
 		let  remoteConsumes;
 		await new Promise((resolve)=>{
 			var remoteea = `ErizoAgent_${agentId}`;
-			this.amqper.callRpc(remoteea, 'createPipTransportConsume',  [this.id,remotePipeTransport.id], { callback(resp){
+			this.amqper.callRpc(remoteea, 'createPipTransportConsume',  [this.id,remotePipeTransport.id,erizoAgent.getAgentId()], { callback(resp){
 				log.info(`createPipTransportConsume rpccallback:${JSON.stringify(resp)}`);
 				if(resp == "timeout"){
 					log.error(`message: createPipTransportConsume rpc call timeout`);
@@ -1422,7 +1459,7 @@ class Room extends events.EventEmitter {
 		log.info(`message: handlePipRoute-创建本地produce remoteConsumes-size:${remoteConsumes.length}`);		
 		//创建本地produce
 		/*
-		针对远端的所有的consume,在本地创建consume
+		针对远端的所有的consume,在本地创建produce
 		*/
 		//遍历所有的consume创建本地的produce,确保所有的produce都创建完成再进行下一步
 		var peers = [];
@@ -1441,6 +1478,7 @@ class Room extends events.EventEmitter {
 							paused        : consume.producerPaused,
 							appData       : consume.appData
 						});
+						this.setPipProduce(produce);
 		
 						user._producers.set(produce.id,produce);
 					});
@@ -1573,7 +1611,7 @@ class Room extends events.EventEmitter {
 									paused        : consume.producerPaused,
 									appData       : consume.appData
 								});
-				
+								this.setPipProduce(produce);
 								user._producers.set(produce.id,produce);
 							}finally{
 								countconsume+=1;
@@ -1596,6 +1634,7 @@ class Room extends events.EventEmitter {
 				}
 			});
 		});
+
 
 
 		//为房间内的所有用户针对所有的produce创建consume
@@ -1623,7 +1662,7 @@ class Room extends events.EventEmitter {
 	}
 
 
-	async createPipTransportConsume(localpipetransportid,callback){
+	async createPipTransportConsume(localpipetransportid,remoteeaid,callback){
 		log.info(`message: createPipTransportConsume 
 		room:${this.id} 
 		localpipetransportid:${localpipetransportid}`);
@@ -1653,7 +1692,9 @@ class Room extends events.EventEmitter {
 									{
 									  producerId : producer.id
 									});
-								//?这里是不是需要存储本地的consume？暂时不存储
+								this.setPipConsume(pipeRemoteConsumer);
+								this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
+
 								var  newConsume = {
 									producerid:producer.id,
 									kind:pipeRemoteConsumer.kind,
@@ -1689,8 +1730,8 @@ class Room extends events.EventEmitter {
 		callback('callback',{retEvent:"sucess",data:resp});
 	}
 
-	async  _createPipeConsumer(user,producer,localPipeTransport){
-		log.info(`message: _createPipeConsumer:user:${user.id} produce:${producer.id}`);
+	async  _createPipeConsumer(user,producer,localPipeTransport,remoteeaid){
+		log.info(`message: _createPipeConsumer:user:${user.id} produce:${producer.id} remoteeaid:${remoteeaid}`);
 		if(!localPipeTransport){
 			log.error(`message: localPipeTransport is  null!`);
 			return ;
@@ -1705,7 +1746,10 @@ class Room extends events.EventEmitter {
 			{
 			  producerId : producer.id
 			});
-		//?这里是不是需要存储本地的consume？暂时不存储
+		this.setPipConsume(pipeRemoteConsumer);
+		this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
+		//监听事件
+		//TODO
 		var  newConsume = {
 			producerid:producer.id,
 			kind:pipeRemoteConsumer.kind,
@@ -1718,6 +1762,89 @@ class Room extends events.EventEmitter {
 		comsumes.push(Peer);
 		return comsumes;
 	}
+
+	_setPipeConsumeEvents(pipeRemoteConsumer,agentId){
+		log.info(`message:_setPipeConsumeEvents pipconsume:${pipeRemoteConsumer.id} remoteAgentId:${agentId}`);
+
+		pipeRemoteConsumer.on('transportclose', () =>
+		{
+			log.info(`message: PipeConsumeEvents-transportclose consumeid:${pipeRemoteConsumer.id} `);
+			this.delPipConsume(pipeRemoteConsumer.id);
+		});
+
+		pipeRemoteConsumer.on('producerclose', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerclose consumeid:${pipeRemoteConsumer.id} `);
+
+			// Remove from its map.
+			consumerPeer._consumers.delete(pipeRemoteConsumer.id);
+			//通知远端关闭对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'closePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+
+		pipeRemoteConsumer.on('producerpause', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerpause consumeid:${pipeRemoteConsumer.id} `);
+			
+			//通知远端暂停对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'pausePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+
+		pipeRemoteConsumer.on('producerresume', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerresume consumeid:${pipeRemoteConsumer.id} `);
+
+			//通知远端恢复对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'resumePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+	}
+
+
+
+	/*
+	关联EA通知关闭pipproduce 关闭
+	*/
+	closePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		localpipproduce.close();
+		this.delPipProduce(localproduceid);
+		callback('callback',{retEvent:"sucess",data:{}});
+	}
+
+	/*
+	关联EA通知暂停pipproduce
+	*/
+	async pausePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		await localpipproduce.pause();
+		callback('callback',{retEvent:"sucess",data:{}});
+  	}
+  	/*
+	关联EA通知恢复pipproduce
+	*/
+    async resumePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		await localpipproduce.resume();
+		callback('callback',{retEvent:"sucess",data:{}});
+  	}
 
 }
 

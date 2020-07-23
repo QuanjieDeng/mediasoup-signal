@@ -767,16 +767,17 @@ class Room extends events.EventEmitter {
 			   }
 			case 'closeProducer':
 				{
-					log.info(`message user:${userid} req closeProducer`);
 					// Ensure the Peer is joined.
 					if (!user.joined){
-						log.error(`message: Peer not yet joined`);
+						log.error(`message: closeProducer  Peer not yet joined`);
 						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
 						return;
 					}
 
 					const { producerId } =   message;
 					const producer = user._producers.get(producerId);
+					log.info(`message user:${userid} req closeProducer producerId:${producerId}`);
+					
 
 					if (!producer){
 						log.error(`message: producerId with id "${producerId}" not found`);
@@ -1346,8 +1347,8 @@ class Room extends events.EventEmitter {
 				this._mapRouterPipeTransports.set(toRouterId,[localPipeTransport,remotePipeTransport]);
 				log.info(`message new piptransportpairs 
 				remote-router:${toRouterId} 
-				localpiptransport:${localPipeTransport.id} 
-				remotepiptransport:${remotePipeTransport.id}`);
+				localpiptransport:${localPipeTransport.id} ip:${ localPipeTransport.tuple.localIp} port:${localPipeTransport.tuple.localPort}
+				remotepiptransport:${remotePipeTransport.id} ip:${remotePipeTransport.ip} port:${remotePipeTransport.port} eaid:${remotePipeTransport.eaid}`);
 				resolve();
 			}
 			var remoteea = `ErizoAgent_${agentId}`;
@@ -1540,6 +1541,7 @@ class Room extends events.EventEmitter {
 
 		});
 		var  resp = {
+			eaid		   : erizoAgent.getAgentId(),
 			id 		   	   : localPipeTransport.id,
 			ip             : localPipeTransport.tuple.localIp,
 			port           : localPipeTransport.tuple.localPort,
@@ -1570,8 +1572,8 @@ class Room extends events.EventEmitter {
 		this._mapRouterPipeTransports.set(remoterouterid,pair);
 		log.info(`message new piptransportpairs 
 			remote-router:${remoterouterid} 
-			localpiptransport:${localPipeTransport.id} 
-			remotepiptransport:${remotepipetransport.id}`);
+			localpiptransport:${localPipeTransport.id}  ip:${localPipeTransport.tuple.localIp} port:${localPipeTransport.tuple.localPort} 
+			remotepiptransport:${remotepipetransport.id} ip:${remotepipetransport.ip} port:${remotepipetransport.port} eaid:${remotepipetransport.eaid}`);
 
 		callback('callback',{retEvent:"sucess",data:{}});
 
@@ -1769,7 +1771,7 @@ class Room extends events.EventEmitter {
 		pipeRemoteConsumer.on('transportclose', () =>
 		{
 			log.info(`message: PipeConsumeEvents-transportclose consumeid:${pipeRemoteConsumer.id} `);
-			this.delPipConsume(pipeRemoteConsumer.id);
+			this.delPipeTransport(pipeRemoteConsumer.id);
 		});
 
 		pipeRemoteConsumer.on('producerclose', () =>
@@ -1777,15 +1779,17 @@ class Room extends events.EventEmitter {
 			log.info(`message: PipeConsumeEvents-producerclose consumeid:${pipeRemoteConsumer.id} `);
 
 			// Remove from its map.
-			consumerPeer._consumers.delete(pipeRemoteConsumer.id);
+			this.delPipConsume(pipeRemoteConsumer.id);
 			//通知远端关闭对应的produce
 			var remoteea = `ErizoAgent_${agentId}`;
+			log.info(`remoteea:${remoteea}`);
+
 			this.amqper.callRpc(remoteea, 'closePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
 		});
 
 		pipeRemoteConsumer.on('producerpause', () =>
 		{
-			log.info(`message: PipeConsumeEvents-producerpause consumeid:${pipeRemoteConsumer.id} `);
+			log.info(`message: PipeConsumeEvents-producerpause consumeid:${pipeRemoteConsumer.id} producerId:${pipeRemoteConsumer.producerId}`);
 			
 			//通知远端暂停对应的produce
 			var remoteea = `ErizoAgent_${agentId}`;
@@ -1825,7 +1829,7 @@ class Room extends events.EventEmitter {
 	async pausePipProduce(localproduceid,callback){
 		const  localpipproduce =   this.getPipProduce(localproduceid);
 		if(!localpipproduce){
-			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			log.error(`message:pausePipProduce can't get  localpipproduce by id:${localproduceid}`);
 			callback('callback',{retEvent:"error",data:{}});
 			return;
 		}
@@ -1838,7 +1842,7 @@ class Room extends events.EventEmitter {
     async resumePipProduce(localproduceid,callback){
 		const  localpipproduce =   this.getPipProduce(localproduceid);
 		if(!localpipproduce){
-			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			log.error(`message:resumePipProduce can't get  localpipproduce by id:${localproduceid}`);
 			callback('callback',{retEvent:"error",data:{}});
 			return;
 		}

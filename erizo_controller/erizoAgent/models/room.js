@@ -8,7 +8,10 @@ const { threadId } = require('worker_threads');
 const { use } = require('chai');
 const { useFakeTimers } = require('sinon');
 const { Logger } = require('log4js/lib/logger');
+const { resolve, join } = require('path');
+const { PersonalizeRuntime } = require('aws-sdk');
 const logger = require('./../../common/logger').logger;
+const erizoAgent =  require('./../erizoAgent');
 
 const log = logger.getLogger('Room');
 
@@ -22,7 +25,24 @@ class Room extends events.EventEmitter {
     this._mediasoupRouter = mediasoupRouter;
     this._audioLevelObserver = audioLevelObserver;
 	this._networkThrottled = false;
-	
+	/*
+	存储该该房间的关联piptransport  key:对端routerID  v:pipetransport对
+	*/
+	this._mapRouterPipeTransports =  new Map();
+	/*
+	存储该房间所有的PipeTransport
+	*/
+	this._mapPipeTransports =  new Map();
+
+	/*
+	存储房间内的 piptransport.produce
+	*/
+	this._mapPipeProduces =  new Map();
+		/*
+	存储房间内的 piptransport.consume
+	*/
+	this._mapPipeConsumes =  new Map();
+
 	// Handle audioLevelObserver.
 	this._handleAudioLevelObserver();
 	global.audioLevelObserver = this._audioLevelObserver;
@@ -72,20 +92,20 @@ class Room extends events.EventEmitter {
     return this.clients.get(id);
   }
 
-  async createClient(clientid) {
+  async createClient(clientid,clientname) {
     const room =  this;
-    const client = await Client.create({ room , clientid });
+    const client = await Client.create({ room , clientid,clientname });
     client.on('disconnect', this.onClientDisconnected.bind(this));
     this.clients.set(client.id, client);
     return client;
   }
 
-  async getOrCreateClient(clientid){
+  async getOrCreateClient(clientid,clientname){
       const  client =  this.getClientById(clientid);
       if(client){
           return client;
       }
-      return await this.createClient(clientid);
+      return await this.createClient(clientid,clientname);
   }
   forEachClient(doSomething) {
     this.clients.forEach((client) => {
@@ -133,6 +153,30 @@ class Room extends events.EventEmitter {
 		//nothing to do
 	}});
   }
+
+  async   sendNotifyMsgToRoom(methed,msg)
+  {
+	log.debug(`sendNotifyMsgToRoom  methed:${methed} msg:${JSON.stringify(msg)}`);
+	var   ec_id = `erizoController_${this.erizoControllerId}`;
+	log.debug(`sendNotifyMsgToRoom-ec_id:${ec_id} methed:${methed} msg:${msg}`);
+
+	var  sendmsg = {
+		data:msg
+	  }
+    this.forEachClient((joinedPeer)=>{
+		if(!joinedPeer.joined)
+		  return;
+		const args = [joinedPeer.id,sendmsg,methed];
+		this.amqper.callRpc(ec_id, 'forwordSingleMsgToClient', args,{callback(resp){
+			//nothing to do
+		}});
+	  });
+  
+	
+
+  }
+
+
 
   _handleAudioLevelObserver()
   {
@@ -249,6 +293,7 @@ class Room extends events.EventEmitter {
 			log.warn('_createDataConsumer() | failed:%o', error);
 		}
 	}
+	
 
 
 
@@ -415,11 +460,26 @@ class Room extends events.EventEmitter {
 
 
 
-  async handleUserRequest(userid,methed,message,callback){
-      log.debug(`messages: room-handleUserRequest:userid:${userid} methed:${methed}`);
+  async handleUserRequest(userid,clientname,methed,message,callback){
+	  var  block_meth = [
+		"getTransportStats",
+		"getProducerStats",
+		"getConsumerStats",
+		"getDataProducerStats",
+		"getDataConsumerStats",
+		"applyNetworkThrottle",
+		"resetNetworkThrottle"
+	  ];
+	  var index =  block_meth.indexOf(methed);
+	  if(index >= 0 ){
+
+	  }else{
+		log.debug(`messages: room-handleUserRequest:userid:${userid} clientname:${clientname} methed:${methed}`);
+	  }
       
       if(methed  =="getRouterRtpCapabilities"){//在第一个消息来到时创建client
-       const user = await this.getOrCreateClient(userid);
+	   const user = await this.getOrCreateClient(userid,clientname);
+	   user.eaid = erizoAgent.getAgentId(); //设置所属的EA
        log.debug(`create success client:${user.getid()}`);
        var  resp = {
             data:this._mediasoupRouter.rtpCapabilities
@@ -663,7 +723,10 @@ class Room extends events.EventEmitter {
 						if(joinedPeer.getid()== user.getid()){
 							return;
 						}
-
+						if(joinedPeer.eaid  != erizoAgent.getAgentId()){
+							log.debug(`message:user:${joinedPeer.id} not  our local user!`);
+							return;
+						}
 						this._createConsumer(
 							{
 								consumerPeer : joinedPeer,
@@ -671,6 +734,27 @@ class Room extends events.EventEmitter {
 								producer
 							});
 			
+					});
+					
+					//创建pipeConsume
+					this._mapRouterPipeTransports.forEach(async (v,k)=>{
+						const  piptransportpair =   v;
+						const  local  =  piptransportpair[0];
+						const  remote  =  piptransportpair[1];
+						log.info(`message: 用户创建produce，为级联SFU创建consume remote_eaid:${remote.eaid}`);
+						const  consumes  = await this._createPipeConsumer(user,producer,local,remote.eaid);
+						//调用remote所属EA，创建本地produce
+						var remoteea = `ErizoAgent_${remote.eaid}`;
+
+						this.amqper.callRpc(remoteea, 'createPipTransportProduce',  [this.id,remote.id,consumes], { callback(resp){
+							log.info(`createPipTransportProduce rpccallback:${JSON.stringify(resp)}`);
+							if(resp == "timeout"){
+								log.error(`message: createPipTransportProduce rpc call timeout`);
+								return;
+							}
+						} });
+
+
 					});
 					// Add into the audioLevelObserver.
 					if (producer.kind === 'audio')
@@ -683,16 +767,17 @@ class Room extends events.EventEmitter {
 			   }
 			case 'closeProducer':
 				{
-					log.info(`message user:${userid} req closeProducer`);
 					// Ensure the Peer is joined.
 					if (!user.joined){
-						log.error(`message: Peer not yet joined`);
+						log.error(`message: closeProducer  Peer not yet joined`);
 						callback('callback',{retEvent:"error",data: {errmsg:"Peer not yet joined", errcode:2003}});
 						return;
 					}
 
 					const { producerId } =   message;
 					const producer = user._producers.get(producerId);
+					log.info(`message user:${userid} req closeProducer producerId:${producerId}`);
+					
 
 					if (!producer){
 						log.error(`message: producerId with id "${producerId}" not found`);
@@ -957,7 +1042,7 @@ class Room extends events.EventEmitter {
 				}
 			case 'getTransportStats':
 				{
-					log.info(`message user:${userid} req getTransportStats`);
+					log.debug(`message user:${userid} req getTransportStats`);
 					const { transportId } = message;
 					const transport =user._transports.get(transportId);
 	
@@ -980,7 +1065,7 @@ class Room extends events.EventEmitter {
 	
 			case 'getProducerStats':
 			{
-				log.info(`message user:${userid} req getProducerStats`);
+				log.debug(`message user:${userid} req getProducerStats`);
 				const { producerId } =   message;
 				const producer = user._producers.get(producerId);
 
@@ -1001,7 +1086,7 @@ class Room extends events.EventEmitter {
 			}
 			case 'getConsumerStats':
 			{
-				log.info(`message user:${userid} req getConsumerStats`);
+				log.debug(`message user:${userid} req getConsumerStats`);
 				const { consumerId } =   message;
 				const consumer =  user._consumers.get(consumerId);
 
@@ -1021,7 +1106,7 @@ class Room extends events.EventEmitter {
 			}
 			case 'getDataProducerStats':
 			{
-				log.info(`message user:${userid} req getDataProducerStats`);
+				log.debug(`message user:${userid} req getDataProducerStats`);
 				const { dataProducerId } =   message;
 				const dataProducer =   user._dataProducers.get(dataProducerId);
 
@@ -1041,7 +1126,7 @@ class Room extends events.EventEmitter {
 
 			case 'getDataConsumerStats':
 			{
-				log.info(`message user:${userid} req getDataConsumerStats`);
+				log.debug(`message user:${userid} req getDataConsumerStats`);
 				const { dataConsumerId }  =  message;
 				const dataConsumer = user._dataConsumers.get(dataConsumerId);
 
@@ -1132,6 +1217,638 @@ class Room extends events.EventEmitter {
             
       }
   }
+
+  getPipeTransport(id){
+	return this._mapPipeTransports.get(id);
+
+  }
+  setPipeTransport(piptransport){
+	this._mapPipeTransports.set(piptransport.id,piptransport);
+  }
+  delPipeTransport(id){
+	this._mapPipeTransports.delete(id);
+  }
+
+
+  setPipProduce(produce){
+	this._mapPipeProduces.set(produce.id,produce);
+  }
+  getPipProduce(produceid){
+	return this._mapPipeProduces.get(produceid);
+  }
+
+  delPipProduce(produceid){
+	this._mapPipeProduces.delete(produceid);
+  }
+
+  setPipConsume(consume){
+	this._mapPipeConsumes.set(consume.id,consume);
+  }
+  getPipConsume(consumeid){
+	return this._mapPipeConsumes.get(consumeid);
+  }
+
+  delPipConsume(consumeid){
+	return this._mapPipeConsumes.delete(consumeid);
+  }
+
+  /*
+  处理SFU级联请求，收到该请求的room,说明在Router<---->的过程中，是作为发起端，主动发起整个串联的流程
+  两个Router之间的级联过程如下
+  A                       	B
+  |createPipTransport     	|
+  |						  	|
+  |----createPipTransport-->|
+  |						  	|
+  |connectPipTransport		|
+  |						  	|
+  |----connectPipTransport->|
+  |						  	|
+  |createconsume			|
+  |----------createproduce->|
+  |						  	|
+  |----------createconsume->|
+  |createproduce            |
+  */
+  async handlePipRoute(toRouterId,agentId,callback){
+		log.info(`message:handlePipRoute toRouterId:${toRouterId} agentId:${agentId}`);
+		var remotePipeTransport = {
+			eaid:agentId,
+			id:undefined,
+			ip:undefined,
+			port:undefined,
+			srtpParameters:undefined
+		}
+		var localPipeTransport ;
+		log.info(`message: handlePipRoute-创建本地transport`);
+		//创建本地transport
+		localPipeTransport = await this._mediasoupRouter.createPipeTransport({ 
+			listenIp : global.config.erizoAgent.publicIP,
+			enableSctp: true,
+			numSctpStreams: { OS: 1024, MIS: 1024 },
+			enableRtx: false,
+			enableSrtp: false
+		});
+
+		log.info(`message: handlePipRoute-创建对端transport`);
+		//创建对端transport
+		await new Promise((resolve)=>{
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'createPipTransport',  [this.id,toRouterId], { callback(resp){
+				log.info(`createPipTransport rpccallback:${JSON.stringify(resp)}`);
+				if(resp == "timeout"){
+					log.error(`message: createPipTransport rpc call timeout`);
+					resolve();
+					return;
+				}
+				remotePipeTransport= resp.data;
+				log.info(`message: remotePipeTransport 
+					id:${remotePipeTransport.id} 
+					ip:${remotePipeTransport.ip} 
+					port:${remotePipeTransport.port}`);
+
+				resolve();
+			} });
+		});
+
+		log.info(`message: handlePipRoute-连接本地transport`);
+		//连接本地transport
+		await localPipeTransport.connect({
+			ip             : remotePipeTransport.ip,
+			port           : remotePipeTransport.port,
+			srtpParameters : remotePipeTransport.srtpParameters
+		  });
+		localPipeTransport.observer.on('close', () =>
+		{
+			//TODO 通知对端router 关闭本地pipeTransport		
+		});
+	
+
+		log.info(`message: handlePipRoute-连接对端transport`);		
+		//连接对端transport
+		var tmplocalpiptransport = {
+			eaid 		   : erizoAgent.getAgentId(),
+			id			   : localPipeTransport.id,
+			ip             : localPipeTransport.tuple.localIp,
+			port           : localPipeTransport.tuple.localPort,
+			srtpParameters : localPipeTransport.srtpParameters
+		};
+
+		await new Promise((resolve)=>{
+
+			var rpccallback=(resp)=>{
+				log.info(`connectPipTransport rpccallback:${JSON.stringify(resp)}`);
+				if(resp == "timeout"){
+					log.error(`message: connectPipTransport rpc call timeout`);
+					resolve();
+					return;
+				}
+				this.setPipeTransport(localPipeTransport);
+				this._mapRouterPipeTransports.set(toRouterId,[localPipeTransport,remotePipeTransport]);
+				log.info(`message new piptransportpairs 
+				remote-router:${toRouterId} 
+				localpiptransport:${localPipeTransport.id} ip:${ localPipeTransport.tuple.localIp} port:${localPipeTransport.tuple.localPort}
+				remotepiptransport:${remotePipeTransport.id} ip:${remotePipeTransport.ip} port:${remotePipeTransport.port} eaid:${remotePipeTransport.eaid}`);
+				resolve();
+			}
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'connectPipTransport',  [this.id,this._mediasoupRouter.id,remotePipeTransport.id,tmplocalpiptransport], { callback:rpccallback});
+		});
+
+		log.info(`message: handlePipRoute-创建本地consume`);		
+		//创建本地的consume
+		/*
+		针对本地房间内的所有produce都创建对应的consume
+		*/
+		var pipRemteConsumes = []
+		let usercount = 0
+		await new Promise((resolve)=>{
+			this.forEachClient(async (joinedPeer)=>{
+				try{
+										/*
+					EAID和本机ID不相同说明不是本机的用户
+					*/
+					if(joinedPeer.eaid != erizoAgent.getAgentId()){
+						return;
+					}
+					var   Peer = {
+						info:joinedPeer,
+						consumes:[]
+					}
+					let produceconut =0;
+					await new Promise(async (resolve2)=>{
+						for(const producer of joinedPeer._producers.values()){
+							try{
+								var  pipeRemoteConsumer = await localPipeTransport.consume(
+									{
+									  producerId : producer.id
+									});
+								this.setPipConsume(pipeRemoteConsumer);
+								// Set Consumer events.
+								this._setPipeConsumeEvents(pipeRemoteConsumer,agentId);
+
+								var  newConsume = {
+									producerid:producer.id,
+									kind:pipeRemoteConsumer.kind,
+									rtpParameters:pipeRemoteConsumer.rtpParameters,
+									paused:pipeRemoteConsumer.producerPaused,
+									appData:producer.appData
+								}
+				
+								Peer.consumes.push(newConsume);
+								
+							}finally{
+								produceconut += 1;
+								if(produceconut === joinedPeer._producers.size){
+									resolve2();
+								}
+							}
+						}
+					});
+
+					pipRemteConsumes.push(Peer);
+				}finally{
+					usercount += 1;
+					if(usercount === this.clients.size){
+						resolve();
+					}
+
+				}
+			});
+		});
+
+		log.info(`message: handlePipRoute-创建对端produce`);		
+		//创建对端produce
+		/*
+		针对本地房间的所有的consume都在对端创建相应的consume,
+		在远端，针对所有的produce为房间内用户创建consume
+		*/
+		await new Promise((resolve)=>{
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'createPipTransportProduce',  [this.id,remotePipeTransport.id,pipRemteConsumes], { callback(resp){
+				log.info(`createPipTransportProduce rpccallback:${JSON.stringify(resp)}`);
+				if(resp == "timeout"){
+					log.error(`message: createPipTransportProduce rpc call timeout`);
+					resolve();
+					return;
+				}
+				resolve();
+			} });
+		});
+
+
+		log.info(`message: handlePipRoute-创建对端consume`);		
+		//创建对端consume
+		/*
+		针对远端的房间的所有produce都创建consume
+		*/
+		let  remoteConsumes;
+		await new Promise((resolve)=>{
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'createPipTransportConsume',  [this.id,remotePipeTransport.id,erizoAgent.getAgentId()], { callback(resp){
+				log.info(`createPipTransportConsume rpccallback:${JSON.stringify(resp)}`);
+				if(resp == "timeout"){
+					log.error(`message: createPipTransportConsume rpc call timeout`);
+					resolve();
+					return;
+				}
+				remoteConsumes = resp.data.consumes;
+				resolve();
+			} });
+		});
+
+		log.info(`message: handlePipRoute-创建本地produce remoteConsumes-size:${remoteConsumes.length}`);		
+		//创建本地produce
+		/*
+		针对远端的所有的consume,在本地创建produce
+		*/
+		//遍历所有的consume创建本地的produce,确保所有的produce都创建完成再进行下一步
+		var peers = [];
+		let  conut = 0;
+		await  new  Promise((resolve)=>{
+			remoteConsumes.forEach(async (v,index,arry)=>{
+				try{
+					var  user = await this.getOrCreateClient(v.info.id,v.info.name);
+					user.joined =  true;
+					peers.push(user);
+					v.consumes.forEach(async (consume,index,arry)=>{
+						var  produce =  await  localPipeTransport.produce({
+							id            : consume.producerid,
+							kind          : consume.kind,
+							rtpParameters : consume.rtpParameters,
+							paused        : consume.producerPaused,
+							appData       : consume.appData
+						});
+						this.setPipProduce(produce);
+		
+						user._producers.set(produce.id,produce);
+					});
+
+				}finally{
+					conut +=  1;
+					if(conut  === remoteConsumes.length){
+						resolve();
+					}
+
+				}
+			});
+			resolve();
+		});
+		callback('callback',{retEvent:"sucess",data:{}});
+
+
+		log.info(`message: handlePipRoute-本地房间创建consume`);
+
+		//为房间内的所有用户针对所有的produce创建consume
+		peers.forEach((user,index,arry)=>{
+			user._producers.forEach((produce,index,arry)=>{
+
+				this.forEachClient((joinedPeer)=>{
+					if(!joinedPeer.joined)
+						return;
+					if(joinedPeer.eaid  != erizoAgent.getAgentId()){ //只为原本在该房间内的用户创建
+						return;
+					}
+
+					this._createConsumer({
+						consumerPeer: joinedPeer,
+						producerPeer: user,
+						producer:produce
+	
+					});
+				});
+			});
+		});
+		
+	}
+
+	async createPipTransport(callback){
+		log.info(`message: createPipTransport room:${this.id}`);
+		var  localPipeTransport;
+		localPipeTransport = await this._mediasoupRouter.createPipeTransport({
+			listenIp : global.config.erizoAgent.publicIP,
+			enableSctp: true,
+			numSctpStreams: { OS: 1024, MIS: 1024 },
+			enableRtx: false,
+			enableSrtp: false
+
+		});
+		this.setPipeTransport(localPipeTransport);
+
+		localPipeTransport.observer.on('close', () =>
+		{
+		  //TODO 通知对端己方通道关闭
+
+		});
+		var  resp = {
+			eaid		   : erizoAgent.getAgentId(),
+			id 		   	   : localPipeTransport.id,
+			ip             : localPipeTransport.tuple.localIp,
+			port           : localPipeTransport.tuple.localPort,
+			srtpParameters : localPipeTransport.srtpParameters
+
+		};
+		
+		callback('callback',{retEvent:"sucess",data:resp});
+	}
+	async connectPipTransport(localpipetransportid,remotepipetransport,remoterouterid,callback){
+		log.info(`message: connectPipTransport 
+				room:${this.id} 
+				localpipetransportid:${localpipetransportid} 
+				remotepipetransport:${JSON.stringify(remotepipetransport)}`);
+		var  localPipeTransport = this.getPipeTransport(localpipetransportid);
+		if(!localPipeTransport){
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		await localPipeTransport.connect({
+			ip             : remotepipetransport.ip,
+			port           : remotepipetransport.port,
+			srtpParameters : remotepipetransport.srtpParameters
+
+		});
+		var pair = [localPipeTransport,remotepipetransport];
+
+		this._mapRouterPipeTransports.set(remoterouterid,pair);
+		log.info(`message new piptransportpairs 
+			remote-router:${remoterouterid} 
+			localpiptransport:${localPipeTransport.id}  ip:${localPipeTransport.tuple.localIp} port:${localPipeTransport.tuple.localPort} 
+			remotepiptransport:${remotepipetransport.id} ip:${remotepipetransport.ip} port:${remotepipetransport.port} eaid:${remotepipetransport.eaid}`);
+
+		callback('callback',{retEvent:"sucess",data:{}});
+
+	}
+
+
+	async createPipTransportProduce(localpipetransportid,remoteConsumes,callback){
+		log.info(`message: createPipTransportProduce 
+		room:${this.id} 
+		localpipetransportid:${localpipetransportid}`);
+
+		var  localPipeTransport = this.getPipeTransport(localpipetransportid);
+		if(!localPipeTransport){
+			log.error(`message: can't  get localpippetransport  by:${localpipetransportid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+
+		//遍历所有的consume创建本地的produce,确保所有的produce都创建完成再进行下一步
+		var peers = [];
+		let  conut = 0;
+		await  new  Promise((resolve)=>{
+			remoteConsumes.forEach(async (v,index,arry)=>{
+				try{
+					const  user = await this.getOrCreateClient(v.info.id,v.info.name);
+					user.joined =  true;
+
+					peers.push(user);
+					let countconsume = 0;
+					await new Promise((resolve2)=>{
+						v.consumes.forEach(async (consume,index,arry)=>{
+							try{
+								var  produce =  await  localPipeTransport.produce({
+									id            : consume.producerid,
+									kind          : consume.kind,
+									rtpParameters : consume.rtpParameters,
+									paused        : consume.producerPaused,
+									appData       : consume.appData
+								});
+								this.setPipProduce(produce);
+								user._producers.set(produce.id,produce);
+							}finally{
+								countconsume+=1;
+								if(countconsume  === v.consumes.length){
+									resolve2();
+								}
+							}
+
+						});
+
+					});
+
+
+				}finally{
+					conut +=  1;
+					if(conut  === remoteConsumes.length){
+						resolve();
+					}
+
+				}
+			});
+		});
+
+
+
+		//为房间内的所有用户针对所有的produce创建consume
+		peers.forEach((user,index,arry)=>{
+			user._producers.forEach((produce,index,arry)=>{
+
+				this.forEachClient((joinedPeer)=>{
+					if(!joinedPeer.joined)
+						return;
+					if(joinedPeer.eaid  != erizoAgent.getAgentId()){//只为那些原本就在该房间的用户创建consume
+						return;
+					}
+
+					this._createConsumer({
+						consumerPeer: joinedPeer,
+						producerPeer: user,
+						producer:produce
+	
+					});
+				});
+			});
+		});
+
+		callback('callback',{retEvent:"sucess",data:{}});
+	}
+
+
+	async createPipTransportConsume(localpipetransportid,remoteeaid,callback){
+		log.info(`message: createPipTransportConsume 
+		room:${this.id} 
+		localpipetransportid:${localpipetransportid}`);
+
+		const localPipeTransport =  this.getPipeTransport(localpipetransportid);
+		
+		var pipRemteConsumes = []
+		let usercount = 0
+		await new Promise(async(resolve)=>{
+			this.forEachClient(async (joinedPeer)=>{
+				try{
+					/*
+					EAID和本机ID不相同说明不是本机的用户
+					*/
+					if(joinedPeer.eaid != erizoAgent.getAgentId()){
+						return;
+					}
+					var   Peer = {
+						info:joinedPeer,
+						consumes:[]
+					}
+					let produceconut =0;
+					await new Promise(async (resolve2)=>{
+						for(const producer of joinedPeer._producers.values()){
+							try{
+								var  pipeRemoteConsumer = await localPipeTransport.consume(
+									{
+									  producerId : producer.id
+									});
+								this.setPipConsume(pipeRemoteConsumer);
+								this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
+
+								var  newConsume = {
+									producerid:producer.id,
+									kind:pipeRemoteConsumer.kind,
+									rtpParameters:pipeRemoteConsumer.rtpParameters,
+									paused:pipeRemoteConsumer.producerPaused,
+									appData:producer.appData
+								}
+				
+								Peer.consumes.push(newConsume);
+								
+							}finally{
+								produceconut += 1;
+								if(produceconut === joinedPeer._producers.size){
+									resolve2();
+								}
+							}
+						}
+					});
+
+					pipRemteConsumes.push(Peer);
+				}finally{
+					usercount += 1;
+					if(usercount === this.clients.size){
+						resolve();
+					}
+
+				}
+			});
+		});
+		var  resp = {
+			consumes:pipRemteConsumes
+		}
+		callback('callback',{retEvent:"sucess",data:resp});
+	}
+
+	async  _createPipeConsumer(user,producer,localPipeTransport,remoteeaid){
+		log.info(`message: _createPipeConsumer:user:${user.id} produce:${producer.id} remoteeaid:${remoteeaid}`);
+		if(!localPipeTransport){
+			log.error(`message: localPipeTransport is  null!`);
+			return ;
+		}
+		const comsumes = [];
+		const   Peer = {
+			info:user,
+			consumes:[]
+		}
+		//创建本地的consume
+		var  pipeRemoteConsumer = await localPipeTransport.consume(
+			{
+			  producerId : producer.id
+			});
+		this.setPipConsume(pipeRemoteConsumer);
+		this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
+		//监听事件
+		//TODO
+		var  newConsume = {
+			producerid:producer.id,
+			kind:pipeRemoteConsumer.kind,
+			rtpParameters:pipeRemoteConsumer.rtpParameters,
+			paused:pipeRemoteConsumer.producerPaused,
+			appData:producer.appData
+		}
+
+		Peer.consumes.push(newConsume);
+		comsumes.push(Peer);
+		return comsumes;
+	}
+
+	_setPipeConsumeEvents(pipeRemoteConsumer,agentId){
+		log.info(`message:_setPipeConsumeEvents pipconsume:${pipeRemoteConsumer.id} remoteAgentId:${agentId}`);
+
+		pipeRemoteConsumer.on('transportclose', () =>
+		{
+			log.info(`message: PipeConsumeEvents-transportclose consumeid:${pipeRemoteConsumer.id} `);
+			this.delPipeTransport(pipeRemoteConsumer.id);
+		});
+
+		pipeRemoteConsumer.on('producerclose', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerclose consumeid:${pipeRemoteConsumer.id} `);
+
+			// Remove from its map.
+			this.delPipConsume(pipeRemoteConsumer.id);
+			//通知远端关闭对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			log.info(`remoteea:${remoteea}`);
+
+			this.amqper.callRpc(remoteea, 'closePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+
+		pipeRemoteConsumer.on('producerpause', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerpause consumeid:${pipeRemoteConsumer.id} producerId:${pipeRemoteConsumer.producerId}`);
+			
+			//通知远端暂停对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'pausePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+
+		pipeRemoteConsumer.on('producerresume', () =>
+		{
+			log.info(`message: PipeConsumeEvents-producerresume consumeid:${pipeRemoteConsumer.id} `);
+
+			//通知远端恢复对应的produce
+			var remoteea = `ErizoAgent_${agentId}`;
+			this.amqper.callRpc(remoteea, 'resumePipProduce',  [this.id,pipeRemoteConsumer.producerId], { callback(resp){}});
+		});
+	}
+
+
+
+	/*
+	关联EA通知关闭pipproduce 关闭
+	*/
+	closePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:closePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		localpipproduce.close();
+		this.delPipProduce(localproduceid);
+		callback('callback',{retEvent:"sucess",data:{}});
+	}
+
+	/*
+	关联EA通知暂停pipproduce
+	*/
+	async pausePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:pausePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		await localpipproduce.pause();
+		callback('callback',{retEvent:"sucess",data:{}});
+  	}
+  	/*
+	关联EA通知恢复pipproduce
+	*/
+    async resumePipProduce(localproduceid,callback){
+		const  localpipproduce =   this.getPipProduce(localproduceid);
+		if(!localpipproduce){
+			log.error(`message:resumePipProduce can't get  localpipproduce by id:${localproduceid}`);
+			callback('callback',{retEvent:"error",data:{}});
+			return;
+		}
+		await localpipproduce.resume();
+		callback('callback',{retEvent:"sucess",data:{}});
+  	}
 
 }
 

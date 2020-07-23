@@ -11,6 +11,7 @@ exports.Reporter = (spec) => {
 
 
   const myMeta = spec.metadata || {};
+  const ip = spec.ip;
 
   let lastTotal = 0;
   let lastIdle = 0;
@@ -53,6 +54,7 @@ exports.Reporter = (spec) => {
       info: {
         id: myId,
         rpc_id: `ErizoAgent_${myId}`,
+        ip:ip
       },
       metadata: myMeta,
       stats: getStats(),

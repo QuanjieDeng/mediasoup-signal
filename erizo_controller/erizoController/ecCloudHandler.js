@@ -1,5 +1,7 @@
 /* global require, exports, setInterval */
 
+const { config } = require('chai');
+
 /* eslint-disable no-param-reassign */
 
 const logger = require('./../common/logger').logger;
@@ -8,7 +10,7 @@ const logger = require('./../common/logger').logger;
 const log = logger.getLogger('EcCloudHandler');
 
 const EA_TIMEOUT = 30000;
-const GET_EA_INTERVAL = 5000;
+const GET_EA_INTERVAL = 2000;
 const AGENTS_ATTEMPTS = 5;
 const WARN_UNAVAILABLE = 503;
 const WARN_TIMEOUT = 504;
@@ -44,6 +46,7 @@ exports.EcCloudHandler = (spec) => {
       });
 
       if (newAgent === true) {
+        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip}`);
         // New agent
         agents[agent.info.id] = agent;
         agents[agent.info.id].timeout = 0;
@@ -70,11 +73,6 @@ exports.EcCloudHandler = (spec) => {
       global.config.erizoController.cloudHandlerPolicy}`).getErizoAgent;
   }
 
-  if (global.config.erizoController.cloudHandlerPolicy) {
-    // eslint-disable-next-line global-require, import/no-dynamic-require
-    getErizoAgent = require(`./ch_policies/${
-      global.config.erizoController.cloudHandlerPolicy}`).getErizoAgent;
-  }
 
   const getMeiasoupWorkerTryAgain = (count,roomid,erizoControllerid, callback) => {
     if (count >= AGENTS_ATTEMPTS) {
@@ -101,13 +99,10 @@ exports.EcCloudHandler = (spec) => {
 
 
 
-  that.getMeiasoupWorker =  (roomid,erizoControllerid,callbackFor) =>{
-    let agentQueue = 'ErizoAgent';
+  that.getMeiasoupWorker =async  (roomid,ip,eapolicy,erizoControllerid,callbackFor) =>{
+    let agentQueue =await getErizoAgentPolicy(ip,eapolicy);
 
-    if (getErizoAgent) {
-      agentQueue = getErizoAgent(agents, undefined);
-    }
-    log.info(`message: getMeiasoupWorker, agentId: ${agentQueue}`);
+    log.info(`message: getMeiasoupWorker, agentId: ${agentQueue} roomid:${roomid} ip:${roomid}`);
     amqper.callRpc(agentQueue, 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
       if (resp === 'timeout') {
         getMeiasoupWorkerTryAgain(0,roomid, erizoControllerid,callbackFor);
@@ -121,6 +116,64 @@ exports.EcCloudHandler = (spec) => {
       }
     } });
 
+  }
+
+
+
+
+  const   getErizoAgentPolicy = async (ip,eapolicy="LOOP")=>{
+    log.info(`message: getErizoAgentPolicy ip:${ip} eapolicy:${eapolicy}`);
+    let agentQueue = 'ErizoAgent';
+    if(eapolicy == "LOOP"){
+      if (getErizoAgent) {
+        agentQueue = getErizoAgent(agents, undefined);
+      }
+      return  agentQueue;
+
+    }else if(eapolicy =="TTL-BEST"){
+      // log.info(`message: getErizoAgentPolicy===${eapolicy}`);
+      const  agentlist = [];
+      let count = 0;
+      await new Promise((resolve)=>{
+        forEachAgent(async(agentId, agentInList)=>{
+          // log.info(`message: forEachAgent agentId:${agentId}`);
+            var earpcid =`ErizoAgent_${agentId}`
+            log.info(`eaid:${earpcid}`);
+            await amqper.callRpc(earpcid, 'getPingConst', [ip], { callback(resp){
+              try{
+                log.info(`message: getPingConst   earpcid:${earpcid} ea.ip:${agentInList.info.ip} rcpcallback:resp:${JSON.stringify(resp)}`);
+                if(resp  == "timeout"){
+                  return;
+                }
+                if(resp.retEvent == "sucess"){
+                  var newagent = {
+                    id:agentId,
+                    spent:resp.spent
+                  }
+                  agentlist.push(newagent);
+                }
+
+              }finally{
+                log.info(`agentId:${agentId} finnally`);
+                count+=1;
+                const agentIds = Object.keys(agents);
+                if(count === agentIds.length){
+                  resolve();
+                }
+              }
+
+            } });
+        });
+      });
+      
+      if(agentlist.length == 0){
+        log.warn(`message: EAping值搜集之后agentlist长度为0`);
+        return agentQueue
+      }
+      agentlist.sort((a,b)=>{return a.spent- b.spent});
+      var earpcid =`ErizoAgent_${ agentlist[0].id}`;
+      return earpcid;
+    }
   }
 
   that.getErizoAgentsList = () => JSON.stringify(agents);

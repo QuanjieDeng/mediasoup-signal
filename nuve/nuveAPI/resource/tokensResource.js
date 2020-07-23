@@ -33,6 +33,8 @@ const getTokenString = (id, token) => {
     host: token.host,
     secure: token.secure,
     signature: signed,
+    eapolicy:token.eapolicy,
+
   };
   const tokenS = (new Buffer(JSON.stringify(tokenJ))).toString('base64');
 
@@ -74,6 +76,9 @@ const generateToken = (req, callback) => {
 
   if (currentRoom.p2p) {
     token.p2p = true;
+  }
+  if(currentRoom.eapolicy){
+    token.eapolicy = currentRoom.eapolicy;
   }
 
   const r = currentRoom._id;

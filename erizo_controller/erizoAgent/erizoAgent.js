@@ -96,22 +96,6 @@ const guid = (function guid() {
 }());
 
 
-// Load submodules with updated config
-const logger = require('./../common/logger').logger;
-const Room =  require('./models/room').Room;
-const log = logger.getLogger('ErizoAgent');
-const amqper = require('./../common/amqper');
-const myErizoAgentId = guid();
-const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId, metadata });
-const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
-const Rooms = require('./models/rooms').Rooms;
-const rooms =   new Rooms(amqper,wm);
-
-
-
-rooms.on('updated',function(){
-  log.debug(`rooms-updated-rooms'size:${rooms.size()}`);
-})
 
 
 if (interfaces) {
@@ -154,6 +138,27 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
 } else {
   publicIP = global.config.erizoAgent.publicIP;
 }
+global.config.erizoAgent.publicIP =publicIP ;
+// Load submodules with updated config
+const logger = require('./../common/logger').logger;
+const Room =  require('./models/room').Room;
+const log = logger.getLogger('ErizoAgent');
+const amqper = require('./../common/amqper');
+const myErizoAgentId = guid();
+const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata });
+const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
+const Rooms = require('./models/rooms').Rooms;
+const rooms =   new Rooms(amqper,wm);
+
+
+
+rooms.on('updated',function(){
+  log.debug(`rooms-updated-rooms'size:${rooms.size()}`);
+})
+
+
+
+
 
 exports.getContext = () => rooms;
 exports.getReporter = () => reporter;
@@ -191,7 +196,6 @@ async function run()
 
 
 exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
-  log.info("getOrCreateRoom--------");
 	let room = rooms.getRoomById(roomid);
 
 	// If the Room does not exist create a new one.

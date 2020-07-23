@@ -318,7 +318,7 @@ const listen =  () => {
     channel.on('connected',async (token, options, callback) => {
       options = options || {};
       options.ip = ip;
-      options.eapolicy = await _getEAPolicy(options.eapolicy);
+      options.eapolicy = await _getEAPolicy(options.token.eapolicy);
       const room =  await rooms.getRoomById(token.room);
       if(room){//房间已经存在
         log.info(`message: room:${token.room}  exist yet,eapolicy:${room.eapolicy}`);

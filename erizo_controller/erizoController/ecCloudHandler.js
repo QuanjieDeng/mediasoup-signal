@@ -10,7 +10,7 @@ const logger = require('./../common/logger').logger;
 const log = logger.getLogger('EcCloudHandler');
 
 const EA_TIMEOUT = 30000;
-const GET_EA_INTERVAL = 5000;
+const GET_EA_INTERVAL = 2000;
 const AGENTS_ATTEMPTS = 5;
 const WARN_UNAVAILABLE = 503;
 const WARN_TIMEOUT = 504;

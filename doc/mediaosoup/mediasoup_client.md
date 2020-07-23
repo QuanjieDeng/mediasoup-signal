@@ -98,8 +98,7 @@
         signature: 'OTQ4ZjYyYzI2YzRkYTJlNDBkMzM4ZDE5ZTFhMjg5YzU1ZWE5ZWNjYw=='
     },
     roomid: '测试房间',
-    username: '小明',
-	eapolicy:'LOOP'  //EA分配策略 LOOP:循环 TTL-BEST:"网络延迟最小"
+    username: '小明'
 }
 ```
 #### 参数说明 

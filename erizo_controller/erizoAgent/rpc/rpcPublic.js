@@ -7,9 +7,7 @@ let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 const rooms =  erizoAgent.getRooms();
 
-var  count = 0;
 exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
-  count +=10;
   try {
     const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
     log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
@@ -96,13 +94,7 @@ exports.getPingConst = (ip,callback) =>{
     } else {
       const spent = rcvd.getTime() - sent.getTime();
       log.info(`${target} ok, spent: ${spent}ms`);
-      if(count>1){
-        callback('callback',{retEvent:"sucess",spent:50});
-      }else
-      {
-        callback('callback',{retEvent:"sucess",spent:spent});
-      }
-      // callback('callback',{retEvent:"sucess",spent:spent});
+      callback('callback',{retEvent:"sucess",spent:spent});
     }
   })
   

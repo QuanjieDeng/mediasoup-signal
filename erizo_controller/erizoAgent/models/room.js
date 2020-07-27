@@ -1320,7 +1320,7 @@ class Room extends events.EventEmitter {
 		  });
 		localPipeTransport.observer.on('close', () =>
 		{
-			//TODO 通知对端router 关闭本地pipeTransport		
+			log.warn(`message: room:${this.id} `);
 		});
 	
 
@@ -1537,8 +1537,7 @@ class Room extends events.EventEmitter {
 
 		localPipeTransport.observer.on('close', () =>
 		{
-		  //TODO 通知对端己方通道关闭
-
+		  log.warn(`message: room:${this.id}  piptransport:${localPipeTransport.id} closed!`);
 		});
 		var  resp = {
 			eaid		   : erizoAgent.getAgentId(),
@@ -1749,9 +1748,9 @@ class Room extends events.EventEmitter {
 			  producerId : producer.id
 			});
 		this.setPipConsume(pipeRemoteConsumer);
-		this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
 		//监听事件
-		//TODO
+		this._setPipeConsumeEvents(pipeRemoteConsumer,remoteeaid);
+		
 		var  newConsume = {
 			producerid:producer.id,
 			kind:pipeRemoteConsumer.kind,

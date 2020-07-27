@@ -22,49 +22,55 @@ EA rpc接口文档
 ### 说明
 - 接受user的信令消息
 
-### 请求参数
-- roomid
-- userid
-- msg
 
-### 返回参数 
-```
-//成功
-{
-  retEvent:"success",
-  data: {
-    
-  }
-}
-
-//失败
-{
-  retEvent:"error",
-  data: {
-      errmsg:"can't find room",
-      errcode:1002
-    }
-  }
-}
-```
 
 ## deleteUser
 ### 说明
+- 通知EA删除某个用户，该用户可能因为各种原理离开了房间
 
-### 请求参数 
-- roomid
-- userid
 
-### 返回参数
-```
-{ 
-  roomid: roomid,
-  agentId: myErizoAgentId
-  }
-)
-```
 ## getErizoAgents
 ### 说明 
 - 获取EA的信息
 
-### 返回参数 
+
+
+
+## getPingConst
+### 说明
+- 获取EA到用户IP的PING值
+
+
+
+
+## handlePipRoute
+### 说明
+- 通知EA开启级联流程
+
+## createPipTransport
+### 说明
+- 通知EA创建   pipeTransport
+
+## connectPipTransport
+### 说明
+- 通知EA连接 pipeTransport
+
+## createPipTransportProduce
+### 说明 
+- 通知EA在本地的pipeTransport上创建produce
+
+## createPipTransportConsume
+### 说明 
+- 通知EA在本地的pipeTransport上创建consume
+
+## closePipProduce
+- 通知EA，关闭对用piptransprt上的 consume
+
+## pausePipProduce
+- 通知EA，暂停对用的pipetransport上的produce
+
+## resumePipProduce
+- 通知EA，重新恢复对应的produce
+
+
+

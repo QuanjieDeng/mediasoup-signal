@@ -13,6 +13,6 @@ NVM_CHECK="$LICODE_ROOT"/scripts/checkNvm.sh
 
 cd $ROOT/erizoController
 nvm use
-node erizoController.js &
+node --stack-size=65500 erizoController.js &
 
 cd $CURRENT_DIR

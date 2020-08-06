@@ -22,6 +22,11 @@ git     clone  https://github.com/QuanjieDeng/mediasoup-signal.git
  ./scripts/installNuve.sh
 ```
 ## 配置
+### 修改系统栈大小 
+    由于EC中存在大量的同步调用，导致部分的函数调用栈比较大，所以在部署EC的机器上需要修改其调用栈 
+    目前参考的值为65500  并且在启动EC时附带参数   --stack-size=65500
+
+
 licode相关的配置不在追述,这里主要说mediasoup相关的配置 
 - webrtctransport监听地址
 ```

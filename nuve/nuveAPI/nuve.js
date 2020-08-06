@@ -22,6 +22,8 @@ const servicesResource = require('./resource/servicesResource');
 const serviceResource = require('./resource/serviceResource');
 const usersResource = require('./resource/usersResource');
 const userResource = require('./resource/userResource');
+const workerResource = require('./resource/workerResource');
+
 
 app.use(express.static(`${__dirname}/public`));
 app.use(bodyParser.json());
@@ -75,6 +77,10 @@ app.get('/rooms/:room/users', usersResource.getList);
 
 app.get('/rooms/:room/users/:user', userResource.getUser);
 app.delete('/rooms/:room/users/:user', userResource.deleteUser);
+
+
+app.get('/workers', workerResource.getWorkerInfo);
+
 
 // handle 404 errors
 app.use((req, res) => {

@@ -56,6 +56,15 @@ exports.WorkerManager = (spec) => {
           nextMediasoupWorkerIdx = 0;
       return worker;
   };
+
+  that.getMediasoupWorkerList= () =>{
+    const  list = [];
+    mediasoupWorkers.forEach((v,index,arry)=>{
+        list.push(v);
+    });
+    return   list;
+};
+
   
 
   return that;

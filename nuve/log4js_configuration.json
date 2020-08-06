@@ -13,7 +13,7 @@
     "AMQPER": "ERROR",
   	"MAuthParser": "ERROR",
   	"NuveAuthenticator": "ERROR",
-    "CloudHandler": "INFO",
+    "CloudHandler": "ERROR",
     "DataBase": "ERROR",
     "RoomRegistry": "ERROR",
     "ServiceRegistry": "ERROR",

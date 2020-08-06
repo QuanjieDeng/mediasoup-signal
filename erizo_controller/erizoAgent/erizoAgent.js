@@ -144,6 +144,7 @@ const logger = require('./../common/logger').logger;
 const Room =  require('./models/room').Room;
 const log = logger.getLogger('ErizoAgent');
 const amqper = require('./../common/amqper');
+const { V4MAPPED } = require('dns');
 const myErizoAgentId = guid();
 const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata });
 const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
@@ -212,4 +213,131 @@ exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
 	}
 
 	return room;
+}
+
+
+
+
+var fs = require( 'fs' );
+var os = require( 'os' );
+const { map } = require('async');
+var CPUCoreNumbers = os.cpus().length;
+var CPUTikHistory = null;
+var getProcessCPUUsage = ( pid, oldProcessTick, sysTickPerSec ) => {
+    var ProcessTickSum = 0;
+    if( Array.isArray( pid ) ){
+        pid.forEach( p => {
+            let ProcessStat = fs.readFileSync( `/proc/${p}/stat`, 'utf8' );
+            let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
+            if( ProcessStatArr == null ) return null;
+            ProcessTickSum += parseInt( ProcessStatArr[13] ) + parseInt( ProcessStatArr[14] );
+        } )
+    }else{
+        let ProcessStat = fs.readFileSync( `/proc/${pid}/stat`, 'utf8' );
+        let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
+        if( ProcessStatArr == null ) return null;
+        ProcessTickSum = parseInt( ProcessStatArr[13] ) + parseInt( ProcessStatArr[14] );
+    }
+
+    let TikSum = 0;
+    if( sysTickPerSec == null ){
+        let CPUStat = fs.readFileSync( '/proc/stat', 'utf8' );
+        let MatchLine = CPUStat.match(/(.*)\n/);
+        if( MatchLine == null ){
+            console.error( "This function not match this machain, please take care" );
+            process.exit();
+        }
+        let CPULineArr = MatchLine[1].match( /(\w+)+/g );
+        // console.log( CPULineArr )
+        if( CPULineArr[0] != 'cpu' ){
+            console.error( "This function not match this machain, please take care" );
+            process.exit();
+        }
+        CPULineArr.forEach( (num) => {
+            let i = parseInt( num );
+            if( isNaN( i ) ) return;
+            TikSum += parseInt(num);
+        } )
+        if( CPUTikHistory == null ){
+            CPUTikHistory = TikSum;
+        }
+    }
+
+    if( ( oldProcessTick == null ) || ( oldProcessTick == 0 ) ){
+        if( sysTickPerSec == null ){
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+                sysTick: TikSum,
+            }
+        }else{
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+            }
+        }
+    }
+
+    if( sysTickPerSec == null ){
+        DiffSysTick = TikSum - CPUTikHistory;
+        CPUTikHistory = TikSum;
+        if( DiffSysTick == 0 ){
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+                sysTick: TikSum,
+            }
+        }
+        let rate = ( ProcessTickSum - oldProcessTick )*100/DiffSysTick*CPUCoreNumbers
+        return {
+            rate: rate.toFixed(2),
+            processTick: ProcessTickSum,
+            sysTick: TikSum,
+        }
+    }else{
+        let rate = ( ProcessTickSum - oldProcessTick )*100/sysTickPerSec*CPUCoreNumbers;
+
+        return {
+            rate: rate.toFixed(2),
+            processTick: ProcessTickSum,
+        }
+    }
+}
+
+
+
+
+const worker_info_map = new Map();
+
+exports.getWorkerInfo =async (callback)=>{
+
+  const  workerlist = await  wm.getMediasoupWorkerList();
+  let produceconut = 0;
+  const infolist = [];
+  await new Promise(async (resolve)=>{
+    workerlist.forEach(async(v,index,arry)=>{
+      try{
+        var tmpusage =  worker_info_map.get(v.pid);
+        if(!tmpusage){
+          tmpusage = {
+            processTick:0
+          }
+        }
+        const  usage =  getProcessCPUUsage(v.pid,tmpusage.processTick);
+        worker_info_map.set(v.pid,usage);
+
+        var  resp = {
+          pid:v.pid,
+          rate:usage.rate
+        }
+        infolist.push(resp);
+      }finally{
+        produceconut += 1;
+        if(produceconut === workerlist.length){
+          resolve();
+        }
+      }
+    });
+  });
+  callback(infolist);
 }

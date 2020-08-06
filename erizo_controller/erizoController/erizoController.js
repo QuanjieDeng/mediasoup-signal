@@ -492,7 +492,7 @@ exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
   }else{
-    log.error(`messages: forwordSingleMsgToClient   can't  get  room by client:${clientId}`);
+    log.error(`messages: forwordSingleMsgToClient   can't  get  room by client:${clientId}  methed:${methed}`);
     callback("error",{data:{}});
   }
 };

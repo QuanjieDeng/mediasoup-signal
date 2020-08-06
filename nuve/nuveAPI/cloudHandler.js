@@ -267,4 +267,15 @@ exports.deleteUser = (user, roomId, callback) => {
   });
 };
 
+exports.getWorkerInfo = (callback) => {
+  const rpcID = `ErizoAgent`;
+  rpc.callRpc(rpcID,'getWorkerInfo',[],{ callback(result) {
+        callback(result);
+      }
+    });
+};
+
+
+
+
 exports.getEcQueue = getEcQueue;

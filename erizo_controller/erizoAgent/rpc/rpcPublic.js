@@ -202,3 +202,12 @@ exports.resumePipProduce = (roomid,localproduceid,callback) =>{
   }
   room.resumePipProduce(localproduceid,callback);
 }
+
+
+
+exports.getWorkerInfo = (callback)=>{
+  log.debug(`message:getWorkerInfo`);
+  erizoAgent.getWorkerInfo(function(info){
+    callback('callback',{info:info});
+  });
+}

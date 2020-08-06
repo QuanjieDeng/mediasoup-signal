@@ -222,15 +222,16 @@ var fs = require( 'fs' );
 var os = require( 'os' );
 const { map } = require('async');
 var CPUCoreNumbers = os.cpus().length;
-var CPUTikHistory = null;
-var getProcessCPUUsage = ( pid, oldProcessTick, sysTickPerSec ) => {
+// var CPUTikHistory = null;
+var getProcessCPUUsage = ( pid, oldProcessTick, CPUTikHistory,sysTickPerSec ) => {
+    log.info(`getProcessCPUUsage pid:${pid} oldProcessTick:${oldProcessTick} CPUTikHistory:${CPUTikHistory}`);
     var ProcessTickSum = 0;
     if( Array.isArray( pid ) ){
         pid.forEach( p => {
             let ProcessStat = fs.readFileSync( `/proc/${p}/stat`, 'utf8' );
             let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
             if( ProcessStatArr == null ) return null;
-            ProcessTickSum += parseInt( ProcessStatArr[13] ) + parseInt( ProcessStatArr[14] );
+            ProcessTickSum += parseInt( ProcessStatArr[14] ) + parseInt( ProcessStatArr[15] )+ parseInt( ProcessStatArr[16] )+ parseInt( ProcessStatArr[17] );
         } )
     }else{
         let ProcessStat = fs.readFileSync( `/proc/${pid}/stat`, 'utf8' );
@@ -258,7 +259,7 @@ var getProcessCPUUsage = ( pid, oldProcessTick, sysTickPerSec ) => {
             if( isNaN( i ) ) return;
             TikSum += parseInt(num);
         } )
-        if( CPUTikHistory == null ){
+        if( CPUTikHistory == 0 ){
             CPUTikHistory = TikSum;
         }
     }
@@ -269,11 +270,13 @@ var getProcessCPUUsage = ( pid, oldProcessTick, sysTickPerSec ) => {
                 rate: "0",
                 processTick: ProcessTickSum,
                 sysTick: TikSum,
+                CPUTikHistory:CPUTikHistory
             }
         }else{
             return {
                 rate: "0",
                 processTick: ProcessTickSum,
+                CPUTikHistory:CPUTikHistory
             }
         }
     }
@@ -286,20 +289,23 @@ var getProcessCPUUsage = ( pid, oldProcessTick, sysTickPerSec ) => {
                 rate: "0",
                 processTick: ProcessTickSum,
                 sysTick: TikSum,
+                CPUTikHistory:CPUTikHistory
             }
         }
         let rate = ( ProcessTickSum - oldProcessTick )*100/DiffSysTick*CPUCoreNumbers
         return {
-            rate: rate.toFixed(2),
+            rate: rate.toFixed(1),
             processTick: ProcessTickSum,
             sysTick: TikSum,
+            CPUTikHistory:CPUTikHistory
         }
     }else{
         let rate = ( ProcessTickSum - oldProcessTick )*100/sysTickPerSec*CPUCoreNumbers;
 
         return {
-            rate: rate.toFixed(2),
+            rate: rate.toFixed(1),
             processTick: ProcessTickSum,
+            CPUTikHistory:CPUTikHistory
         }
     }
 }
@@ -320,10 +326,11 @@ exports.getWorkerInfo =async (callback)=>{
         var tmpusage =  worker_info_map.get(v.pid);
         if(!tmpusage){
           tmpusage = {
-            processTick:0
+            processTick:0,
+            CPUTikHistory:0
           }
         }
-        const  usage =  getProcessCPUUsage(v.pid,tmpusage.processTick);
+        const  usage =  getProcessCPUUsage(v.pid,tmpusage.processTick,tmpusage.CPUTikHistory);
         worker_info_map.set(v.pid,usage);
 
         var  resp = {

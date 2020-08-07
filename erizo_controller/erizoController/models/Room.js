@@ -147,8 +147,10 @@ class Room extends events.EventEmitter {
       }
 
       log.debug(`message: sendMsgToRoom,clientId:${client.id},roomId:${this.id} method:${method}`);
-
-      client.sendMessage(method, args);
+      setTimeout(() => {
+        client.sendMessage(method, args);
+      }, 0);
+      
     });
   }
 

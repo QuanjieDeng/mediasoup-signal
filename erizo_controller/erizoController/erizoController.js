@@ -1,7 +1,7 @@
 /* global require, setInterval, clearInterval, exports */
 
 /* eslint-disable no-param-reassign */
-
+require('stackup');
 const rpcPublic = require('./rpc/rpcPublic');
 // eslint-disable-next-line import/no-unresolved
 const config = require('./../../licode_config');

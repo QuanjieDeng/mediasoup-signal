@@ -237,7 +237,7 @@ var getProcessCPUUsage = ( pid, oldProcessTick, CPUTikHistory,sysTickPerSec ) =>
         let ProcessStat = fs.readFileSync( `/proc/${pid}/stat`, 'utf8' );
         let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
         if( ProcessStatArr == null ) return null;
-        ProcessTickSum = parseInt( ProcessStatArr[13] ) + parseInt( ProcessStatArr[14] );
+        ProcessTickSum = parseInt( ProcessStatArr[14] ) + parseInt( ProcessStatArr[15] )+parseInt( ProcessStatArr[16] )+ parseInt( ProcessStatArr[17] );;
     }
 
     let TikSum = 0;

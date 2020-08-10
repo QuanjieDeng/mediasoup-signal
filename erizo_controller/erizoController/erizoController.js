@@ -369,7 +369,7 @@ const listen =  () => {
                 roomId: room.id,
                 clientId: client.id });
             }else{
-              log.error(`message: Room：${id} can't get mediaosupworker!`);
+              log.error(`message: Room：${roomid} can't get mediaosupworker!`);
               callback('error', {
                 errmsg: "get mediasoup worker failed",
                 errcode:1002

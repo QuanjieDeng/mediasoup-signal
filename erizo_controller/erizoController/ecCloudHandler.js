@@ -75,17 +75,15 @@ exports.EcCloudHandler = (spec) => {
 
 
   const getMeiasoupWorkerTryAgain = (count,roomid,erizoControllerid, callback) => {
+    log.warn(`message:getMeiasoupWorkerTryAgain roomid:${roomid} times:${count}`);
     if (count >= AGENTS_ATTEMPTS) {
       callback('timeout');
       return;
     }
 
-    log.warn('message: agent selected timed out trying again, ' +
-             `code: ${WARN_TIMEOUT}`);
-
     amqper.callRpc('ErizoAgent', 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
       if (resp === 'timeout') {
-        getMeiasoupWorkerTryAgain((count += 1), callback);
+        getMeiasoupWorkerTryAgain((count += 1),roomid,erizoControllerid, callback);
       } else {
         log.info(`message: getMeiasoupWorker success, TryAgain:${count},roomid: ${roomid}, ` +
           `agentId: ${agentId}, routerId: ${routerId}`);

@@ -217,7 +217,7 @@ config.mediasoup.webRtcTransportOptions = 		{
     listenIps :
     [
         {
-            ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.81',
+            ip          : process.env.MEDIASOUP_LISTEN_IP,
             announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
         }
     ],
@@ -231,7 +231,7 @@ config.mediasoup.webRtcTransportOptions = 		{
 config.mediasoup.plainTransportOptions = 		{
     listenIp :
     {
-        ip          : process.env.MEDIASOUP_LISTEN_IP || '192.168.94.81',
+        ip          : process.env.MEDIASOUP_LISTEN_IP,
         announcedIp : process.env.MEDIASOUP_ANNOUNCED_IP
     },
     maxSctpMessageSize : 262144,

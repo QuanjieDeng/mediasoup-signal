@@ -17,6 +17,7 @@ global.config.erizoAgent.useIndividualLogFiles =
   global.config.erizoAgent.useIndividualLogFiles || false;
 
 
+
 const BINDED_INTERFACE_NAME = global.config.erizoAgent.networkInterface;
 
 // Parse command line arguments
@@ -139,6 +140,11 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
   publicIP = global.config.erizoAgent.publicIP;
 }
 global.config.erizoAgent.publicIP =publicIP ;
+//初始化webrtctransport info
+if(!process.env.MEDIASOUP_LISTEN_IP){
+  global.config.mediasoup.webRtcTransportOptions.listenIps[0].ip =  global.config.erizoAgent.publicIP;
+}  
+console.log(global.config.mediasoup.webRtcTransportOptions);
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
 const Room =  require('./models/room').Room;

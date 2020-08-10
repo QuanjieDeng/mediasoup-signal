@@ -142,7 +142,7 @@ class Room extends events.EventEmitter {
   //房间内消息广播
   sendMessage(method, args,{ excludePeer = undefined } = {}) {
     this.forEachClient((client) => {
-      if(client.id == excludePeer.id){
+      if(excludePeer && (client.id == excludePeer.id)){
         return;
       }
 

@@ -7,6 +7,10 @@ const rpcPublic = require('./rpc/rpcPublic');
 const config = require('./../../licode_config');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
+const { AwaitQueue } = require('awaitqueue');
+// Async queue to manage rooms.
+// @type {AwaitQueue}
+const queue = new AwaitQueue();
 
 // Configuration default values
 global.config = config || {};
@@ -361,13 +365,21 @@ const listen =  () => {
           const rpccallback = async(roomid, agentId, routerId) => {
             if(roomid != "timeout"){
               log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
-
-              const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
+              queue.push(async()=>{
+                const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
               const client = await room.createClient(channel, token, options,agentId,routerId);
+
+                callback('success', {
+                  roomId: room.id,
+                  clientId: client.id });
+              })
+
+              // const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
+              // const client = await room.createClient(channel, token, options,agentId,routerId);
   
-              callback('success', {
-                roomId: room.id,
-                clientId: client.id });
+              // callback('success', {
+              //   roomId: room.id,
+              //   clientId: client.id });
             }else{
               log.error(`message: Room：${roomid} can't get mediaosupworker!`);
               callback('error', {

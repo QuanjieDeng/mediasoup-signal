@@ -144,7 +144,6 @@ global.config.erizoAgent.publicIP =publicIP ;
 if(!process.env.MEDIASOUP_LISTEN_IP){
   global.config.mediasoup.webRtcTransportOptions.listenIps[0].ip =  global.config.erizoAgent.publicIP;
 }  
-console.log(global.config.mediasoup.webRtcTransportOptions);
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
 const Room =  require('./models/room').Room;

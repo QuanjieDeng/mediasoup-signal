@@ -3,15 +3,27 @@ const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManag
 const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('RPCPublic');
 const ping = require ("net-ping");
+const { AwaitQueue } = require('awaitqueue');
+// Async queue to manage rooms.
+// @type {AwaitQueue}
+const queue = new AwaitQueue();
 let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 const rooms =  erizoAgent.getRooms();
 
 exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
   try {
-    const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
-    log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
-    callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
+    /*
+    这里使用queue，去保证请求的顺序执行，防止对一个房间重复创建
+    */
+    queue.push(async()=>{
+      const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
+      log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+      callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
+    });
+    // const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
+    // log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+    // callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
   } catch (error) {
     log.error('message: error  getEA, error:', error);
     callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:undefined});

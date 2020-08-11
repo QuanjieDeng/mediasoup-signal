@@ -11,22 +11,22 @@
   ],
   "levels": {
     "AMQPER": "ERROR",
-    "Client": "DEBUG",
-    "Channel":"DEBUG",
-    "Connection": "DEBUG",
-    "ErizoController": "DEBUG",
-    "ErizoJSController": "DEBUG",
-    "ErizoAgent": "DEBUG",
-    "ErizoAgentReporter": "DEBUG",
-    "EcCloudHandler": "DEBUG",
-    "Room": "DEBUG",
-    "Rooms":"DEBUG",
-    "ErizoAgent-WM":"DEBUG",
-    "RoomController": "DEBUG",
-    "RovClient":"INFO",
-    "RovMetricsServer":"INFO",
-    "RovReplManager":"INFO",
-    "RPCPublic":"DEBUG"
+    "Client": "INFO",
+    "Channel":"INFO",
+    "Connection": "ERROR",
+    "ErizoController": "ERROR",
+    "ErizoJSController": "ERROR",
+    "ErizoAgent": "ERROR",
+    "ErizoAgentReporter": "ERROR",
+    "EcCloudHandler": "ERROR",
+    "Room": "INFO",
+    "Rooms":"INFO",
+    "ErizoAgent-WM":"INFO",
+    "RoomController": "INFO",
+    "RovClient":"ERROR",
+    "RovMetricsServer":"ERROR",
+    "RovReplManager":"ERROR",
+    "RPCPublic":"INFO"
   }
 }
 

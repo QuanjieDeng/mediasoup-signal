@@ -6,12 +6,10 @@ const os = require('os');
 exports.Reporter = (spec) => {
   const that = {};
 
-
   const myId = spec.id;
-
-
   const myMeta = spec.metadata || {};
   const ip = spec.ip;
+  const rooms = spec.rooms;
 
   let lastTotal = 0;
   let lastIdle = 0;
@@ -54,7 +52,8 @@ exports.Reporter = (spec) => {
       info: {
         id: myId,
         rpc_id: `ErizoAgent_${myId}`,
-        ip:ip
+        ip:ip,
+        rooms:rooms.size()
       },
       metadata: myMeta,
       stats: getStats(),

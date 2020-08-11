@@ -151,10 +151,10 @@ const log = logger.getLogger('ErizoAgent');
 const amqper = require('./../common/amqper');
 const { V4MAPPED } = require('dns');
 const myErizoAgentId = guid();
-const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata });
 const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
 const Rooms = require('./models/rooms').Rooms;
 const rooms =   new Rooms(amqper,wm);
+const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata,rooms });
 
 
 

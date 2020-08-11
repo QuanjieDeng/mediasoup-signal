@@ -41,12 +41,14 @@ exports.EcCloudHandler = (spec) => {
           // The agent is already registered, I update its stats and reset its
           agentInList.stats = agent.stats;
           agentInList.timeout = 0;
+          agentInList.info.rooms = agent.info.rooms;
+          log.debug(`message:update EA id:${agent.info.id} ip:${agent.info.ip} rooms:${agent.info.rooms}`);
           newAgent = false;
         }
       });
 
       if (newAgent === true) {
-        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip}`);
+        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip} rooms:${agent.info.rooms}`);
         // New agent
         agents[agent.info.id] = agent;
         agents[agent.info.id].timeout = 0;
@@ -119,10 +121,10 @@ exports.EcCloudHandler = (spec) => {
 
 
 
-  const   getErizoAgentPolicy = async (ip,eapolicy="LOOP")=>{
+  const   getErizoAgentPolicy = async (ip,eapolicy="ROOM-BEST")=>{
     log.info(`message: getErizoAgentPolicy ip:${ip} eapolicy:${eapolicy}`);
     let agentQueue = 'ErizoAgent';
-    if(eapolicy == "LOOP"){
+    if(eapolicy == "ROOM-BEST"){
       if (getErizoAgent) {
         agentQueue = getErizoAgent(agents, undefined);
       }

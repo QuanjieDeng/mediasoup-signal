@@ -106,11 +106,11 @@ python 环境需要把密文转为ascii即可
 | |data  |否 | json对象    |房间的附加信息|
 | |p2p  |否| bool    |标识是不是点对点会话|
 | |mediaConfiguration  |否 | string    |房间媒体配置字符串|
-| |eapolicy  |是 | string    |房间级联策略 LOOP 或者 TTL-BEST|
+| |eapolicy  |是 | string    |房间级联策略 ROOM-BEST 或者 TTL-BEST|
 
 **关于eapolicy**
 在创建房间时，用户选择具体的SFU分配策略
-- LOOP为默认的策略，这种策略下服务器随机原则分配SFU
+- ROOM-BEST 为默认的策略，这种策略下服务器根据房间数量最少优先原则分配SFU
 - TTL-BEST为高级策略，这种策略下服务器根据客户端到SFU的网络距离选择最合适的SFU分配
 
 

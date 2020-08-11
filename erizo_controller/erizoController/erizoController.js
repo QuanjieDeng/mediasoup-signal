@@ -290,7 +290,7 @@ const updateMyState = () => {
 const _getEAPolicy = async (ineapolicy)=>{
   log.info(`_getEAPolicy ineapolicy:${ineapolicy} TTLBestForce:${global.config.erizoController.TTLBestForce} TTLBest:${global.config.erizoController.TTLBest}`);
   if(!ineapolicy){
-    ineapolicy = "LOOP";
+    ineapolicy = "ROOM-BEST";
   }
 
   let newpolicy = ineapolicy;
@@ -298,7 +298,7 @@ const _getEAPolicy = async (ineapolicy)=>{
     return "TTL-BEST";
   }
   if(!global.config.erizoController.TTLBest && ineapolicy=="TTL-BEST"){
-    return "LOOP";
+    return "ROOM-BEST";
   }
 
   return newpolicy;
@@ -326,7 +326,7 @@ const listen =  () => {
       const room =  await rooms.getRoomById(token.room);
       if(room){//房间已经存在
         log.info(`message: room:${token.room}  exist yet,eapolicy:${room.eapolicy}`);
-        if( room.eapolicy  === "LOOP"){//一个房间就一个router不需要再次申请router
+        if( room.eapolicy  === "ROOM-BEST"){//一个房间就一个router不需要再次申请router
           const client = await room.createClient(channel, token, options,room.erizoAgentId,room.routerId);
           callback('success', {
             roomId: room.id,

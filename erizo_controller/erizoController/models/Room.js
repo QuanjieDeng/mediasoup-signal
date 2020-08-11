@@ -166,13 +166,19 @@ class Room extends events.EventEmitter {
   //通知EA删除用户
   removeClientEA(roomid,clientId,agentId){
     log.info(`message: removeClient clientId ${clientId}`);
-    const args = [roomid, clientId];
-    const ealist = this.sfum.getEAlist();
-    ealist.forEach((v,index,arry)=>{
-      var   agentid = `ErizoAgent_${v}`;
-      this.amqper.callRpc(agentid, 'deleteUser', args);
+    const tmpargs = [roomid, clientId];
+    // const ealist = this.sfum.getEAlist();
+    // ealist.forEach((v,index,arry)=>{
+    //   var   agentid = `ErizoAgent_${v}`;
+    //   this.amqper.callRpc(agentid, 'deleteUser', args);
 
-    });
+    // });
+    /*
+    在全集群内广播，而不仅是在房间拥有的EA上广播
+    可能的情况是当大量连接创建时，在LOOP模式下，EC的房间来不及创建，新进的用户发现没有创建room,就会再次申请EA，
+    但是最终一个房间只会使用一个EA，就会导致一些EA上创建了一个空的房间，所以在删除用户时进行全域删除
+    */
+    this.amqper.broadcast("ErizoAgent",{ method: 'deleteUser', args: tmpargs});
 
 
   };
@@ -194,6 +200,7 @@ class Rooms extends events.EventEmitter {
   async getOrCreateRoom(erizoControllerId, agentId,routerId,id,eapolicy) {
     let room = this.rooms.get(id);
     if (room === undefined) {
+      log.debug(`message:getOrCreateRoom room:${id} not exist,whill create`);
       const  amqper =  this.amqper;
       const  ecch =  this.ecch;
       room =await Room.create({erizoControllerId,agentId,routerId, amqper, ecch, id,eapolicy});

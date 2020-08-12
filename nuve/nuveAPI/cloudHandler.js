@@ -78,6 +78,10 @@ const unassignErizoController = (erizoControllerId) => {
     });
   });
 };
+const notifyECDownToEA = (ecid)=>{
+  log.warn(`messgae: notifyECDownToEA ecid:${ecid}`);
+  rpc.broadcast("ErizoAgent",{ method: 'handleEcDown', args: [ecid] });
+}
 
 const checkKA = () => {
   erizoControllerRegistry.getErizoControllers((erizoControllers) => {
@@ -88,6 +92,8 @@ const checkKA = () => {
           'does not respond. Deleting it.');
         erizoControllerRegistry.removeErizoController(id);
         unassignErizoController(id);
+        //notify to ea
+        notifyECDownToEA(id);
         return;
       }
       erizoControllerRegistry.incrementKeepAlive(id);

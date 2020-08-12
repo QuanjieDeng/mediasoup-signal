@@ -95,6 +95,23 @@ exports.getErizoAgents = (callback) =>{
   erizoAgent.getReporter().getErizoAgent(callback);
 };
 
+/*
+处理EC宕机事件,遍历所有的房间，如果该房间所在的EC为通知中的，则删除该房间，以及他关联的所有对象
+*/
+exports.handleEcDown = (ecid) =>{
+  log.debug(`message handleEcDown ecid:${ecid}`);
+  rooms.forEachRoom((room)=>{
+    if(room.erizoControllerId === ecid){
+      log.info(`handleEcDown,room:${room.id} whill delete,blown ec:${ecid}`);
+      room.close();
+      rooms.deleteRoom(room.id);
+    }
+  });
+
+};
+
+
+
 
 //测算ping值
 exports.getPingConst = (ip,callback) =>{

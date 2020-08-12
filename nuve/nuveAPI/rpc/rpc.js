@@ -22,6 +22,8 @@ const map = {}; // {corrID: {fn: callback, to: timeout}}
 let clientQueue;
 let connection;
 let exc;
+let broadcastExc;
+
 
 // Create the amqp connection to rabbitMQ server
 const addr = {};
@@ -65,6 +67,13 @@ exports.connect = (callback) => {
         });
       };
 
+
+      
+      // Create a fanout exchange
+      broadcastExc = connection.exchange('broadcastExchange',{ type: 'topic', autoDelete: false },(exchange) => {
+        log.info(`message: exchange open, exchangeName: ${exchange.name}`);
+      });
+
       // Create the queue for send messages
       clientQueue = connection.queue('', (q) => {
         log.info(`message: clientQueue open, queueName: ${q.name}`);
@@ -82,6 +91,7 @@ exports.connect = (callback) => {
       });
     });
   });
+
 
   connection.on('error', (e) => {
     log.error(`message: AMQP connection error killing process, errorMsg: ${logger.objectToLog(e)}`);
@@ -108,4 +118,22 @@ exports.callRpc = (to, method, args, callbacks) => {
   }
   const send = { method, args, corrID, replyTo: clientQueue.name };
   exc.publish(to, send);
+};
+
+
+
+
+exports.broadcast = (topic, message, callback) => {
+  const body = { message };
+
+  if (callback) {
+    corrID += 1;
+    map[corrID] = {};
+    map[corrID].fn = { callback };
+    map[corrID].to = setTimeout(callbackError, TIMEOUT, corrID);
+
+    body.corrID = corrID;
+    body.replyTo = clientQueue.name;
+  }
+  broadcastExc.publish(topic, body);
 };

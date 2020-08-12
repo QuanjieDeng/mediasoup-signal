@@ -77,6 +77,7 @@ class Room extends events.EventEmitter {
 			});
   }
   close(){
+	this._audioLevelObserver.close();
     this._mediasoupRouter.close();
   }
   getRouterId() {

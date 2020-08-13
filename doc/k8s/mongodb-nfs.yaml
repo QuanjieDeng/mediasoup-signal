@@ -33,7 +33,7 @@ spec:
       imagePullSecrets:
         - name: gianthub-registry-key
       containers:
-        - image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.1
+        - image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
           args: ["--mongodb"]
           imagePullPolicy: IfNotPresent
           name: mongodb

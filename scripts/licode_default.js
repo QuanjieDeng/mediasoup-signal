@@ -8,6 +8,7 @@ var config = {}
 config.rabbit = {};
 config.rabbit.host = 'localhost'; //default value: 'localhost'
 config.rabbit.port = 5672; //default value: 5672
+config.rabbit.url="amqp:test:123456@localhost:5672"
 // Sets the AQMP heartbeat timeout to detect dead TCP Connections
 config.rabbit.heartbeat = 8; //default value: 8 seconds, 0 to disable
 config.logger = {};

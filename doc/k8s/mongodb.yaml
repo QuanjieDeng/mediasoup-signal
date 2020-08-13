@@ -13,7 +13,8 @@ spec:
       version: v1
   template:
     metadata:
-      annotations: 'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
+      annotations: 
+        'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
       labels:
         app: mongodb
         version: v1
@@ -21,7 +22,7 @@ spec:
       imagePullSecrets:
         - name: gianthub-registry-key
       containers:
-        - image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.1
+        - image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
           args: ["--mongodb"]
           imagePullPolicy: IfNotPresent
           resources:

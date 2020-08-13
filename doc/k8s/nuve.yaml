@@ -13,7 +13,8 @@ spec:
       version: v1
   template:
     metadata:
-      annotations: 'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
+      annotations: 
+        'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
       labels:
         app: nuve
         version: v1
@@ -22,7 +23,7 @@ spec:
         - name: gianthub-registry-key
       containers:
         - name: nuve
-          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.1
+          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
           args: ["--nuve"]
           imagePullPolicy: IfNotPresent
           resources:
@@ -38,7 +39,7 @@ spec:
           terminationMessagePolicy: File
           volumeMounts:
            - name: licode-data
-             mountPath: /opt/licode/licode_config.js
+             mountPath: /opt/mediasoup-signal/licode_config.js
              subPath: licode_config.js
       volumes:
         - name: licode-data

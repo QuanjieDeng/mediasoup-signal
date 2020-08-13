@@ -13,7 +13,8 @@ spec:
       version: v1
   template:
     metadata:
-      annotations: 'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
+      annotations: 
+        'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
       labels:
         app: rabbitmq
         version: v1
@@ -22,7 +23,7 @@ spec:
         - name: gianthub-registry-key
       containers:
         - name: rabbitmq
-          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.1
+          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
           args: ["--rabbitmq"]
           imagePullPolicy: IfNotPresent
           resources:

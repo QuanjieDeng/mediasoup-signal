@@ -34,16 +34,3 @@
 
 ## NFS服务器
 - NFS对外公布的路径为 /nfs_mongodb    mongodb的挂载路径为  /nfs_mongodb/mongodb  注意需要配置模式为no_root_squash
-
-## 待解决的问题 
-- rabbitmq的集群问题-要单独部署一个K8S集群
-- rabbitmq每次都需要创建新的用户 因为默认的guest只允许本地访问  -需要单独部署在一个K8S集群中
-- mongo的集群问题
-- 集群需要修改成https 或者是wss
-
-## 备注
--  EC 的公网地址问题-  目前启动后注册到NUVE的地址是局域网地址
-    当前解决办法是启动镜像使用 hostNetWork模式
--  EC&EA在部署的时候需要单独部署
-    EC由于都是监听的8080端口，另外使用的是容器的hostNetWork模式，K8S是不会让两个EC在同一个node上启动的
-    EA的问题主要在于不能把连个EA部署在相同的node上面-这个点使用pod之间的反亲和性来解决

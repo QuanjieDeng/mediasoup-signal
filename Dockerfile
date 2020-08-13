@@ -13,8 +13,8 @@ RUN  apt-get remove  -y  python-pip python3-pip
 COPY  ./get-pip.py     /op/mediasoup-signal/
 RUN   python     /op/mediasoup-signal/get-pip.py
 RUN   python3     /op/mediasoup-signal/get-pip.py
-RUN  apt-get install  -y vim  
-RUN  apt-get install  -y telnet
+#RUN  apt-get install  -y vim  
+#RUN  apt-get install  -y telnet
 
 
 

@@ -1,3 +1,5 @@
+## K8S部署模型 
+![k8s部署模型](k8s-frame.png)
 ## 各个节点部署的思路
 -  nuve 是无状态的，可以使用k8s-service 类型为nodeport
 -  mongodb 对外封装一个service pod之间直接使用域名进行沟通
@@ -9,7 +11,7 @@
 -  EA+EJ是绑定在一起的，理论上一个node 不可以部署多个EA,因为端口占用比较多 EA最终在流媒体数据交互时也时和客户端互通的，而且端口不一定 没办法创建servie，直接部署成pod即可
 
 
-### 配置文件
+
 ### 环境变量
 - licode的镜像中启动脚本 需要使用一些环境变量的配置，我们先在ConfigMap中创建好
 然后在 创建 k8s负载时 直接使用ConfigMap
@@ -21,7 +23,7 @@
 ## 部署步骤
 - 所有集群内的主机的外网网卡名称统一修改为eth0
 - 修改start.sh中的  namespace
-- 执行start.sh 等待执行完成即可
+- 执行start.sh 等待执行完成即可，如果需要手动执行则参考 start.sh中步骤执行即可
 
 ## 使用ingress
 - 如果希望通过使用ingress的方式暴露服务，首先需要在K8S集群中部署Ingress  Controler，目前主流的有nginx-ingress/haproxy/istiso

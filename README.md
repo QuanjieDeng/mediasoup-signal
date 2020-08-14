@@ -110,3 +110,7 @@ export  DEBUG=mediasoup*
 export  DEBUG=mediasoup:WARN*
 
 ```
+
+
+## K8S
+- 系统如果需要在K8S环境中部署，参考  doc/k8s部分

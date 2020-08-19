@@ -43,7 +43,7 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-          - mountPath: /opt/licode/build/db
+          - mountPath: /opt/mediasoup-signal/build/db
             name: mongo-data
       dnsPolicy: ClusterFirst
       restartPolicy: Always

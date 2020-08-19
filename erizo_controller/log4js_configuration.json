@@ -22,11 +22,11 @@
     "Room": "INFO",
     "Rooms":"INFO",
     "ErizoAgent-WM":"INFO",
-    "RoomController": "ERROR",
-    "RovClient":"ERROR",
-    "RovMetricsServer":"ERROR",
-    "RovReplManager":"ERROR",
-    "RPCPublic":"ERROR"
+    "RoomController": "INFO",
+    "RovClient":"INFO",
+    "RovMetricsServer":"INFO",
+    "RovReplManager":"INFO",
+    "RPCPublic":"INFO"
   }
 }
 

@@ -18,8 +18,8 @@ const mongoConn = MongoClient.connect(
 
 const opts = {
     storeClient: mongoConn,
-    points: config.ratelimit.global.points, // Number of points
-    duration: config.ratelimit.global.duration, // Per second(s)
+    points: config.nuve.ratelimit.global.points, // Number of points
+    duration: config.nuve.ratelimit.global.duration, // Per second(s)
     dbName: 'rateLimite',
     tableName: 'globalWithQuen',
 };
@@ -27,7 +27,7 @@ const opts = {
 
 const rateLimiterMongo = new RateLimiterMongo(opts);
 const limiterQueue = new RateLimiterQueue(rateLimiterMongo, {
-  maxQueueSize: config.ratelimit.global.quensize,
+  maxQueueSize: config.nuve.ratelimit.global.quensize,
 });
 
 const rateLimiteGlobalQuen = (req, res, next) => {
@@ -36,6 +36,7 @@ const rateLimiteGlobalQuen = (req, res, next) => {
       next();
     })
     .catch(() => {
+      console.log(`ralteLimiterSingle globalquen too amny`);
       res.status(429).send('Too Many Requests');
     })
 };

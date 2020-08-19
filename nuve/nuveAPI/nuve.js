@@ -14,18 +14,21 @@ const ralteLimiterSingle =  require('./../common/Middleware/ralteLimiterSingle')
 const config = require('./../../licode_config');
 
 const app = express();
-console.log(`ratelimit  global:${config.ratelimit.global.global} quen:${config.ratelimit.global.quen} signal:${config.ratelimit.signal.signal}`);
-if(config.ratelimit.global.global){
-  if(config.ratelimit.global.quen){
+console.log(`ratelimit  global:${config.nuve.ratelimit.global.global} quen:${config.nuve.ratelimit.global.quen} signal:${config.nuve.ratelimit.signal.signal}`);
+
+if(config.nuve.ratelimit.signal.signal){
+  app.use(ralteLimiterSingle);
+}
+
+if(config.nuve.ratelimit.global.global){
+  if(config.nuve.ratelimit.global.quen){
     app.use(rateLimiteGlobalQuen);
   }else{
     app.use(rateLimiterGlobal);
   }
 }
 
-if(config.ratelimit.signal.signal){
-  app.use(ralteLimiterSingle);
-}
+
 
 
 

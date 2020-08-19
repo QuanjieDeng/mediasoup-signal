@@ -16,8 +16,8 @@ const mongoConn = MongoClient.connect(
 
 const opts = {
     storeClient: mongoConn,
-    points: config.ratelimit.signal.points, // Number of points
-    duration: config.ratelimit.signal.duration, // Per second(s)
+    points: config.nuve.ratelimit.signal.points, // Number of points
+    duration: config.nuve.ratelimit.signal.duration, // Per second(s)
     dbName: 'rateLimite',
     tableName: 'single',
 };
@@ -32,6 +32,7 @@ const ralteLimiterSingle = (req, res, next) => {
       next();
     })
     .catch(() => {
+      console.log(`ralteLimiterSingle req.ip：${req.ip} too amny`);
       res.status(428).send('Too Many Requests-single');
     });
 };

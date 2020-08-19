@@ -1,4 +1,5 @@
 const os = require('os');
+const { fail } = require('assert');
 var config = {}
 
 /*********************************************************
@@ -32,7 +33,21 @@ config.nuve.testErizoController = 'localhost:8080'; // default value: 'localhost
 // Nuve Cloud Handler policies are in nuve/nuveAPI/ch_policies/ folder
 config.nuve.cloudHandlerPolicy = 'default_policy.js'; // default value: 'default_policy.js'
 config.nuve.port = 3000; // default value: 3000
+config.nuve.ratelimit = {};
 
+config.nuve.ratelimit.global={
+    global:false,
+    quen:true,
+    points : 1000, //Number of points
+    duration : 1, // Per second(s)
+    quensize : 1000 //quensize
+}
+
+config.nuve.ratelimit.signal = {
+    signal :false, //open tag
+    points : 10, //Number of points
+    duration : 1 // Per second(s)
+}
 
 /*********************************************************
  ERIZO CONTROLLER CONFIGURATION
@@ -90,6 +105,13 @@ config.erizoController.reportSubscriptions = {
 config.erizoController.cloudHandlerPolicy = 'default_policy.js'; // default value: 'default_policy.js'
 config.erizoController.TTLBestForce = false; //强制开启TTLBest,开启后全部使用TTLBest模式
 config.erizoController.TTLBest = true;//开启后用户可选择使用TTL-BEST模式，否则使用默认的LOOP模式
+
+config.erizoController.ratelimit = {};
+config.erizoController.ratelimit.global={
+    global:false,
+    points : 1000, //Number of points
+    duration : 1, // Per second(s)
+}
 /*********************************************************
  ERIZO AGENT CONFIGURATION
 **********************************************************/

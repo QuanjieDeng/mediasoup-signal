@@ -4,8 +4,11 @@ const logger = require('./../../common/logger').logger;
 const crypto = require('crypto');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const uuidv4 = require('uuid/v4');
-
+const config = require('./../../../licode_config');
 const log = logger.getLogger('Channel');
+const limiterQueue =  require('./../ralteLimiterMemory').limiterQueue;
+const limiterFlexible =  require('./../ralteLimiterMemory').limiterFlexible;
+
 
 const NUVE_KEY = global.config.nuve.superserviceKey;
 
@@ -30,6 +33,8 @@ const checkSignature = (token, key) => {
 function listenToSocketHandshakeEvents(channel) {
   channel.socket.on('token', channel.onToken.bind(channel));
   channel.socket.on('reconnected', channel.onReconnected.bind(channel));
+  channel.socket.on('disconnect', channel.onDisconnect.bind(channel));
+
   channel.socket.on('disconnect', channel.onDisconnect.bind(channel));
 }
 
@@ -61,9 +66,21 @@ class Channel extends events.EventEmitter {
     listenToSocketHandshakeEvents(this);
   }
 
-  onToken(options, callback) {
+  async onToken(options, callback) {
     const token = options.token;
     log.debug('message: token received');
+    if(config.erizoController.ratelimit.global.global){
+      try {
+        // await limiterFlexible.consume(this.socket.handshake.address); // consume 1 point per event from IP
+        await limiterFlexible.consume('global'); // consume 1 point per event from IP
+      } catch(rejRes) {
+        log.error(`message: onToken to  many client`);
+        callback('error', 'too  many client');;
+        return;
+      }
+    }
+
+
     if (token && checkSignature(token, NUVE_KEY)) {
       this.nuve.deleteToken(token.tokenId).then((tokenDB) => {
         if (token.host === tokenDB.host) {

@@ -238,3 +238,20 @@ config.mediasoup.plainTransportOptions = 		{
     maxSctpMessageSize : 262144,
     enableSrtp : false
 };
+
+
+config.ratelimit = {};
+config.ratelimit.global={
+    global:true,
+    quen:false,
+    points : 10, //Number of points
+    duration : 1, // Per second(s)
+    quensize : 1 //quensize
+}
+
+
+config.ratelimit.signal = {
+    signal :true, //open tag
+    points : 10, //Number of points
+    duration : 1 // Per second(s)
+}

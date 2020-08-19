@@ -6,10 +6,28 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const rpc = require('./rpc/rpc');
 
+const rateLimiterGlobal =  require('./../common/Middleware/rateLimiterGlobal')
+const rateLimiteGlobalQuen =  require('./../common/Middleware/rateLimiteGlobalQuen')
+const ralteLimiterSingle =  require('./../common/Middleware/ralteLimiterSingle')
+
 // eslint-disable-next-line import/no-unresolved
 const config = require('./../../licode_config');
 
 const app = express();
+console.log(`ratelimit  global:${config.ratelimit.global.global} quen:${config.ratelimit.global.quen} signal:${config.ratelimit.signal.signal}`);
+if(config.ratelimit.global.global){
+  if(config.ratelimit.global.quen){
+    app.use(rateLimiteGlobalQuen);
+  }else{
+    app.use(rateLimiterGlobal);
+  }
+}
+
+if(config.ratelimit.signal.signal){
+  app.use(ralteLimiterSingle);
+}
+
+
 
 rpc.connect();
 

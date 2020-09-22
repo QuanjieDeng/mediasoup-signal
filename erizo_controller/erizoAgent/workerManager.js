@@ -64,7 +64,10 @@ exports.WorkerManager = (spec) => {
     });
     return   list;
 };
-
+   
+that.getsize= () =>{
+    return mediasoupWorkers.length;
+};
   
 
   return that;

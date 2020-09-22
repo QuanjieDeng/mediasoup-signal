@@ -23,9 +23,9 @@
     "Rooms":"INFO",
     "ErizoAgent-WM":"INFO",
     "RoomController": "INFO",
-    "RovClient":"INFO",
-    "RovMetricsServer":"INFO",
-    "RovReplManager":"INFO",
+    "RovClient":"DEBUG",
+    "RovMetricsServer":"DEBUG",
+    "RovReplManager":"DEBUG",
     "RPCPublic":"INFO"
   }
 }

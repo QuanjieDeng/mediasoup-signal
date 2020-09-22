@@ -132,23 +132,28 @@ class RovMetricsGatherer {
         return Promise.resolve();
       });
   }
+/*
 
+
+    
+*/
   getTotalPublishersAndSubscribers() {
-    this.log.debug('Getting total publishers and subscribers');
-    const requestPromises = [];
-    const command = 'var totalValues = {publishers: 0, subscribers: 0};' +
-      'context.rooms.forEach((room) => {room.streamManager.forEachPublishedStream((pub) => {totalValues.publishers += 1;' +
-      'totalValues.subscribers += pub.avSubscribers.size; });}); console.log(JSON.stringify(totalValues));';
-    this.rovClient.components.erizoControllers.forEach((controller) => {
+    this.log.info('Getting total publishers and subscribers');
+    const requestPromises = [];    
+    const  command ='var totalValues = {produce: 0, consume: 0};'+
+      'context.rooms.forEach((room)=>{room.forEachClient((client)=>{totalValues.produce += client._producers.size;'+
+      'totalValues.consume += client._consumers.size;});});console.log(JSON.stringify(totalValues));';
+    this.rovClient.components.erizoAgents.forEach((controller) => {
       requestPromises.push(controller.runAndGetPromise(command));
     });
     let totalPublishers = 0;
     let totalSubscribers = 0;
     return Promise.all(requestPromises).then((results) => {
+      this.log.info(`getTotalPublishersAndSubscribers result:${JSON.stringify(results)}`);
       results.forEach((result) => {
         const parsedResult = JSON.parse(result);
-        totalPublishers += parsedResult.publishers;
-        totalSubscribers += parsedResult.subscribers;
+        totalPublishers += parsedResult.produce;
+        totalSubscribers += parsedResult.consume;
       });
       this.prometheusMetrics.totalPublishers.set(totalPublishers);
       this.prometheusMetrics.totalSubscribers.set(totalSubscribers);
@@ -160,59 +165,66 @@ class RovMetricsGatherer {
   getActiveProcesses() {
     this.log.debug('Getting active processes');
     let totalActiveProcesses = 0;
-    this.rovClient.components.erizoJS.forEach((process) => {
-      totalActiveProcesses += process.idle ? 0 : 1;
+    const requestPromises = [];    
+    const  command ='console.log(context.workermanage.getsize());';
+    this.rovClient.components.erizoAgents.forEach((controller) => {
+      requestPromises.push(controller.runAndGetPromise(command));
     });
-    this.log.debug(`Active processes result: ${totalActiveProcesses}`);
-    this.prometheusMetrics.activeErizoJsProcesses.set(totalActiveProcesses);
-    return Promise.resolve();
-  }
-
-  getErizoJSMetrics() {
-    this.log.debug('Getting total connections failed');
-    return this.rovClient.runInComponentList('console.log(JSON.stringify(context.getAndResetMetrics()))', this.rovClient.components.erizoJS)
-      .then((results) => {
-        let totalConnectionsFailed = 0;
-        let taskDurationDistribution = Array(5).fill(0);
-        let connectionLevels = Array(10).fill(0);
-        let publishers = 0;
-        let subscribers = 0;
-        results.forEach((result) => {
-          const parsedResult = JSON.parse(result);
-          totalConnectionsFailed += parsedResult.connectionsFailed;
-          taskDurationDistribution =
-            taskDurationDistribution.map((a, i) => a + parsedResult.durationDistribution[i]);
-          connectionLevels = connectionLevels.map((a, i) => a + parsedResult.connectionLevels[i]);
-          publishers += parsedResult.publishers;
-          subscribers += parsedResult.subscribers;
-        });
-        this.log.debug(`Total connections failed: ${totalConnectionsFailed}`);
-        this.prometheusMetrics.totalConnectionsFailed.set(totalConnectionsFailed);
-        this.prometheusMetrics.taskDuration0To10ms.set(taskDurationDistribution[0]);
-        this.prometheusMetrics.taskDuration10To50ms.set(taskDurationDistribution[1]);
-        this.prometheusMetrics.taskDuration50To100ms.set(taskDurationDistribution[2]);
-        this.prometheusMetrics.taskDuration100To1000ms.set(taskDurationDistribution[3]);
-        this.prometheusMetrics.taskDurationMoreThan1000ms.set(taskDurationDistribution[4]);
-
-        this.prometheusMetrics.connectionQualityHigh.set(connectionLevels[2]);
-        this.prometheusMetrics.connectionQualityMedium.set(connectionLevels[1]);
-        this.prometheusMetrics.connectionQualityLow.set(connectionLevels[0]);
-
-        this.prometheusMetrics.totalPublishersInErizoJS.set(publishers);
-        this.prometheusMetrics.totalSubscribersInErizoJS.set(subscribers);
-        return Promise.resolve();
+    return Promise.all(requestPromises).then((results) => {
+      this.log.info(`getActiveProcesses result:${JSON.stringify(results)}`);
+      results.forEach((result) => {
+        totalActiveProcesses += isNaN(result) ? 0 : parseInt(result, 10);
       });
+      this.prometheusMetrics.activeErizoJsProcesses.set(totalActiveProcesses);
+      return Promise.resolve();
+    });
   }
+
+  // getWorkerMetrics() {
+  //   this.log.debug('Getting total connections failed');
+  //   return this.rovClient.runInComponentList('console.log(JSON.stringify(context.getAndResetMetrics()))', this.rovClient.components.erizoJS)
+  //     .then((results) => {
+  //       let totalConnectionsFailed = 0;
+  //       let taskDurationDistribution = Array(5).fill(0);
+  //       let connectionLevels = Array(10).fill(0);
+  //       let publishers = 0;
+  //       let subscribers = 0;
+  //       results.forEach((result) => {
+  //         const parsedResult = JSON.parse(result);
+  //         totalConnectionsFailed += parsedResult.connectionsFailed;
+  //         taskDurationDistribution =
+  //           taskDurationDistribution.map((a, i) => a + parsedResult.durationDistribution[i]);
+  //         connectionLevels = connectionLevels.map((a, i) => a + parsedResult.connectionLevels[i]);
+  //         publishers += parsedResult.publishers;
+  //         subscribers += parsedResult.subscribers;
+  //       });
+  //       this.log.debug(`Total connections failed: ${totalConnectionsFailed}`);
+  //       this.prometheusMetrics.totalConnectionsFailed.set(totalConnectionsFailed);
+  //       this.prometheusMetrics.taskDuration0To10ms.set(taskDurationDistribution[0]);
+  //       this.prometheusMetrics.taskDuration10To50ms.set(taskDurationDistribution[1]);
+  //       this.prometheusMetrics.taskDuration50To100ms.set(taskDurationDistribution[2]);
+  //       this.prometheusMetrics.taskDuration100To1000ms.set(taskDurationDistribution[3]);
+  //       this.prometheusMetrics.taskDurationMoreThan1000ms.set(taskDurationDistribution[4]);
+
+  //       this.prometheusMetrics.connectionQualityHigh.set(connectionLevels[2]);
+  //       this.prometheusMetrics.connectionQualityMedium.set(connectionLevels[1]);
+  //       this.prometheusMetrics.connectionQualityLow.set(connectionLevels[0]);
+
+  //       this.prometheusMetrics.totalPublishersInErizoJS.set(publishers);
+  //       this.prometheusMetrics.totalSubscribersInErizoJS.set(subscribers);
+  //       return Promise.resolve();
+  //     });
+  // }
 
   gatherMetrics() {
     return this.getIP()
-      .then(() => this.getReleaseInfo())
+      // .then(() => this.getReleaseInfo())
       .then(() => this.rovClient.updateComponentsList())
       .then(() => this.getTotalRooms())
       .then(() => this.getTotalClients())
       .then(() => this.getTotalPublishersAndSubscribers())
       .then(() => this.getActiveProcesses())
-      .then(() => this.getErizoJSMetrics());
+      // .then(() => this.getWorkerMetrics());
   }
 }
 

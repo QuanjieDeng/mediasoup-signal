@@ -6,7 +6,6 @@ const AWS = require('aws-sdk');
 
 // eslint-disable-next-line import/no-unresolved
 const config = require('../../licode_config');
-
 class RovMetricsGatherer {
   constructor(rovClient, promClient, statsPrefix, logger) {
     this.rovClient = rovClient;
@@ -18,7 +17,11 @@ class RovMetricsGatherer {
       totalPublishers: new promClient.Gauge({ name: this.getNameWithPrefix('total_publishers'), help: 'total active publishers' }),
       totalSubscribers: new promClient.Gauge({ name: this.getNameWithPrefix('total_subscribers'), help: 'total active subscribers' }),
       activeErizoJsProcesses: new promClient.Gauge({ name: this.getNameWithPrefix('active_erizojs_processes'), help: 'active processes' }),
-      totalConnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_connections_failed'), help: 'connections failed' }),
+ 
+      totalICEconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_ice_connections_failed'), help: 'ice connections failed' }),
+      totalDTLSconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_dtls_connections_failed'), help: 'dtls connections failed' }),
+      totalSCTPconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_sctp_connections_failed'), help: 'sctp connections failed' }),
+ 
       taskDuration0To10ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_0_to_10_ms'), help: 'tasks lasted less than 10 ms' }),
       taskDuration10To50ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_10_to_50_ms'), help: 'tasks lasted between 10 and 50 ms' }),
       taskDuration50To100ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_50_to_100_ms'), help: 'tasks lasted between 50 and 100 ms' }),
@@ -180,41 +183,26 @@ class RovMetricsGatherer {
     });
   }
 
-  // getWorkerMetrics() {
-  //   this.log.debug('Getting total connections failed');
-  //   return this.rovClient.runInComponentList('console.log(JSON.stringify(context.getAndResetMetrics()))', this.rovClient.components.erizoJS)
-  //     .then((results) => {
-  //       let totalConnectionsFailed = 0;
-  //       let taskDurationDistribution = Array(5).fill(0);
-  //       let connectionLevels = Array(10).fill(0);
-  //       let publishers = 0;
-  //       let subscribers = 0;
-  //       results.forEach((result) => {
-  //         const parsedResult = JSON.parse(result);
-  //         totalConnectionsFailed += parsedResult.connectionsFailed;
-  //         taskDurationDistribution =
-  //           taskDurationDistribution.map((a, i) => a + parsedResult.durationDistribution[i]);
-  //         connectionLevels = connectionLevels.map((a, i) => a + parsedResult.connectionLevels[i]);
-  //         publishers += parsedResult.publishers;
-  //         subscribers += parsedResult.subscribers;
-  //       });
-  //       this.log.debug(`Total connections failed: ${totalConnectionsFailed}`);
-  //       this.prometheusMetrics.totalConnectionsFailed.set(totalConnectionsFailed);
-  //       this.prometheusMetrics.taskDuration0To10ms.set(taskDurationDistribution[0]);
-  //       this.prometheusMetrics.taskDuration10To50ms.set(taskDurationDistribution[1]);
-  //       this.prometheusMetrics.taskDuration50To100ms.set(taskDurationDistribution[2]);
-  //       this.prometheusMetrics.taskDuration100To1000ms.set(taskDurationDistribution[3]);
-  //       this.prometheusMetrics.taskDurationMoreThan1000ms.set(taskDurationDistribution[4]);
-
-  //       this.prometheusMetrics.connectionQualityHigh.set(connectionLevels[2]);
-  //       this.prometheusMetrics.connectionQualityMedium.set(connectionLevels[1]);
-  //       this.prometheusMetrics.connectionQualityLow.set(connectionLevels[0]);
-
-  //       this.prometheusMetrics.totalPublishersInErizoJS.set(publishers);
-  //       this.prometheusMetrics.totalSubscribersInErizoJS.set(subscribers);
-  //       return Promise.resolve();
-  //     });
-  // }
+  getWorkerMetrics() {
+    this.log.debug('Enter  getWorkerMetrics ');
+    return this.rovClient.runInComponentList('console.log(JSON.stringify(context.getAndResetMetrics()))', this.rovClient.components.erizoAgents)
+      .then((results) => {
+        this.log.info(`getWorkerMetrics return :${results}`);
+        let totalICEConnectedFailed = 0;
+        let totalDTLSConnectedFailed = 0;
+        let totalSCTPConnectedFailed = 0;
+        results.forEach((result) => {
+          const parsedResult = JSON.parse(result);
+          totalICEConnectedFailed += parsedResult.ICEconnectionsFailed;
+          totalDTLSConnectedFailed += parsedResult.DTLSconnectionsFailed;
+          totalSCTPConnectedFailed += parsedResult.SCTPconnectionsFailed;
+        });
+        this.prometheusMetrics.totalICEconnectionsFailed  = totalICEConnectedFailed;
+        this.prometheusMetrics.totalDTLSconnectionsFailed = totalDTLSConnectedFailed;
+        this.prometheusMetrics.totalSCTPconnectionsFailed = totalSCTPConnectedFailed;
+        return Promise.resolve();
+      });
+  }
 
   gatherMetrics() {
     return this.getIP()
@@ -224,7 +212,7 @@ class RovMetricsGatherer {
       .then(() => this.getTotalClients())
       .then(() => this.getTotalPublishersAndSubscribers())
       .then(() => this.getActiveProcesses())
-      // .then(() => this.getWorkerMetrics());
+      .then(() => this.getWorkerMetrics());
   }
 }
 

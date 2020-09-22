@@ -21,7 +21,8 @@ class RovMetricsGatherer {
       totalDTLSconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_dtls_connections_failed'), help: 'dtls connections failed' }),
       totalSCTPconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_sctp_connections_failed'), help: 'sctp connections failed' }),
       produceScore: new promClient.Gauge({ name: this.getNameWithPrefix('produce_score'), help: 'produceScore' }),
-      consumeScore: new promClient.Gauge({ name: this.getNameWithPrefix('consume_score'), help: 'consumeScore' })
+      consumeScore: new promClient.Gauge({ name: this.getNameWithPrefix('consume_score'), help: 'consumeScore' }),
+      rpcCost: new promClient.Gauge({ name: this.getNameWithPrefix('rpcCost'), help: 'rpcCost' })
     };
     this.log = logger;
     this.releaseInfoRead = false;
@@ -228,7 +229,31 @@ class RovMetricsGatherer {
         return Promise.resolve();
       });
   }
+  getRpcCost(){
+    this.log.debug('Getting getRpcCost ');
+    const cmd = 'var totalconst = 0;var size = 0;var ave_cost = 0;'+
+    'context.rooms.forEach((room) => {room.clients.forEach((client)=>{totalconst += client.ave_cost;size += 1;});});'+
+    'if(size  !=  0){ave_cost =  totalconst/size;} console.log(ave_cost);';
+    
+    return this.rovClient.runInComponentList(cmd,this.rovClient.components.erizoControllers)
+      .then((results) => {
+        this.log.debug(`quanjie-----result  :${results}`);
+        var totalconst = 0;
+        var size = 0;
+        var ave_cost = 0;
 
+        results.forEach((ave_cost) => {
+          totalconst += isNaN(ave_cost) ? 0 : parseInt(ave_cost, 10);
+          // totalconst += ave_cost;
+          size += 1;
+        });
+        if(size  !=  0){
+          ave_cost =  totalconst/size;
+        }
+        this.prometheusMetrics.rpcCost.set(ave_cost);
+        return Promise.resolve();
+      });
+  }
   gatherMetrics() {
     return this.getIP()
       // .then(() => this.getReleaseInfo())
@@ -238,7 +263,8 @@ class RovMetricsGatherer {
       .then(() => this.getTotalPublishersAndSubscribers())
       .then(() => this.getActiveProcesses())
       .then(() => this.getWorkerMetrics())
-      .then(() => this.getRTPScore());
+      .then(() => this.getRTPScore())
+      .then(() => this.getRpcCost());
   }
 }
 

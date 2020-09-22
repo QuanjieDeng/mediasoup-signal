@@ -22,6 +22,8 @@ class Client extends events.EventEmitter {
     this.listenToSocketEvents();
     this.user = { name: token.userName, role: token.role };
     this.state = 'sleeping'; // ?
+    this.rpc_cost_list = [];
+    this.ave_cost = 0;
   }
 
   static async create({ channel, token, options, room,agentId,routerId}){
@@ -148,8 +150,13 @@ class Client extends events.EventEmitter {
       this.disconnect();
       return;
     }
+    var starttime  =  process.uptime()*1000;
     const rpccallback = (result) => {
       log.debug(`message: onClientRequestCom  client:${this.id} rpccallback-methed:${methed}`);
+      var endttime  =  process.uptime()*1000;
+      var cost = endttime- starttime;
+      this.saverpccost(cost);
+
       if(result  == "timeout"){
         callback("error",{errmsg:"rpc call timeout",errcode:1001});
       }else{
@@ -171,9 +178,13 @@ class Client extends events.EventEmitter {
     }
     this.displayName = message.data.displayName;
     this.device = message.data.device;
-
+    var starttime  =  process.uptime()*1000;
     const rpccallback = (result) => {
       log.debug(`message: onJoin client:${this.id} rpccallback:${JSON.stringify(result)}`);
+      var endttime  =  process.uptime()*1000;
+      var cost = endttime- starttime;
+      this.saverpccost(cost);
+
       if(result  == "timeout"){
         callback("error",{errmsg:"rpc call timeout",errcode:1001});
       }else{
@@ -193,6 +204,25 @@ class Client extends events.EventEmitter {
       }
     };
     this.room.processReqMessageFromClient(this.room.id, this.id,this.user.name,this.agentId, "join",message.data, rpccallback.bind(this));
+  }
+
+  /*
+  save the  rpc cost time
+  */
+  saverpccost(cost){
+    if(this.rpc_cost_list.length >= 5){
+      this.rpc_cost_list.shift();
+    }
+    this.rpc_cost_list.push(cost);
+    //计算平均值
+    var sum  = 0;
+    this.rpc_cost_list.forEach((v,index,arry)=>{
+      sum +=  v;
+    });
+    if(this.rpc_cost_list.length   !=  0){
+      this.ave_cost= sum/this.rpc_cost_list.length;
+    }
+  
   }
 }
 

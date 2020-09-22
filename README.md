@@ -114,3 +114,29 @@ export  DEBUG=mediasoup:WARN*
 
 ## K8S
 - 系统如果需要在K8S环境中部署，参考  doc/k8s部分
+
+## ROV数据采集
+- ROV组件做为遥测数据源，提供遥测数据，供Prometheus等开源组件进行展示，
+- 定期到系统的各个组件拉取数据
+
+### 启动
+- ROV程序的启动文件为 erizo_controller/ROV/rovMetricsServer.js
+```
+cd  erizo_controller/ROV
+node  rovMetricsServer.js
+```
+
+### 结构拓扑
+![rov架构](doc/rov.jpg)
+### 采集指标
+- activeRooms: 全局范围内的总room数量
+- activeClients: 全局范围内总的client数量
+- totalPublishers: 全局范围内总的produce数量
+- totalSubscribers: 全局范围内总的consume数量
+- activeErizoJsProcesses: mediasoup-worker数量
+- totalICEconnectionsFailed: ICE连接错误报告数量
+- totalDTLSconnectionsFailed: DTLS连接错误报告数量
+- totalSCTPconnectionsFailed: SCTP错误状态报告数量
+- produceScore: mediasoup报告produce传输RTP质量分数  0-10
+- consumeScore: mediasoup报告comsume传输RTP质量分数  0-10
+- rpcCost: rpc调用平均耗时-毫秒

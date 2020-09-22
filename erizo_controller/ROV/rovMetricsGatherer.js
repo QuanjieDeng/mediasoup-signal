@@ -17,21 +17,11 @@ class RovMetricsGatherer {
       totalPublishers: new promClient.Gauge({ name: this.getNameWithPrefix('total_publishers'), help: 'total active publishers' }),
       totalSubscribers: new promClient.Gauge({ name: this.getNameWithPrefix('total_subscribers'), help: 'total active subscribers' }),
       activeErizoJsProcesses: new promClient.Gauge({ name: this.getNameWithPrefix('active_erizojs_processes'), help: 'active processes' }),
- 
       totalICEconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_ice_connections_failed'), help: 'ice connections failed' }),
       totalDTLSconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_dtls_connections_failed'), help: 'dtls connections failed' }),
       totalSCTPconnectionsFailed: new promClient.Gauge({ name: this.getNameWithPrefix('total_sctp_connections_failed'), help: 'sctp connections failed' }),
- 
-      taskDuration0To10ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_0_to_10_ms'), help: 'tasks lasted less than 10 ms' }),
-      taskDuration10To50ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_10_to_50_ms'), help: 'tasks lasted between 10 and 50 ms' }),
-      taskDuration50To100ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_50_to_100_ms'), help: 'tasks lasted between 50 and 100 ms' }),
-      taskDuration100To1000ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_100_to_1000_ms'), help: 'tasks lasted between 100 ms and 1 s' }),
-      taskDurationMoreThan1000ms: new promClient.Gauge({ name: this.getNameWithPrefix('task_duration_1000_ms'), help: 'tasks lasted more than 1 s' }),
-      connectionQualityHigh: new promClient.Gauge({ name: this.getNameWithPrefix('connection_quality_high'), help: 'connections with high quality' }),
-      connectionQualityMedium: new promClient.Gauge({ name: this.getNameWithPrefix('connection_quality_medium'), help: 'connections with medium quality' }),
-      connectionQualityLow: new promClient.Gauge({ name: this.getNameWithPrefix('connection_quality_low'), help: 'connections with low quality' }),
-      totalPublishersInErizoJS: new promClient.Gauge({ name: this.getNameWithPrefix('total_publishers_erizojs'), help: 'total active publishers in erizo js' }),
-      totalSubscribersInErizoJS: new promClient.Gauge({ name: this.getNameWithPrefix('total_subscribers_erizojs'), help: 'total active subscribers in erizo js' }),
+      produceScore: new promClient.Gauge({ name: this.getNameWithPrefix('produce_score'), help: 'produceScore' }),
+      consumeScore: new promClient.Gauge({ name: this.getNameWithPrefix('consume_score'), help: 'consumeScore' })
     };
     this.log = logger;
     this.releaseInfoRead = false;
@@ -197,9 +187,44 @@ class RovMetricsGatherer {
           totalDTLSConnectedFailed += parsedResult.DTLSconnectionsFailed;
           totalSCTPConnectedFailed += parsedResult.SCTPconnectionsFailed;
         });
-        this.prometheusMetrics.totalICEconnectionsFailed  = totalICEConnectedFailed;
-        this.prometheusMetrics.totalDTLSconnectionsFailed = totalDTLSConnectedFailed;
-        this.prometheusMetrics.totalSCTPconnectionsFailed = totalSCTPConnectedFailed;
+        this.prometheusMetrics.totalICEconnectionsFailed.set(totalICEConnectedFailed);
+        this.prometheusMetrics.totalDTLSconnectionsFailed.set(totalDTLSConnectedFailed);
+        this.prometheusMetrics.totalSCTPconnectionsFailed.set(totalSCTPConnectedFailed);
+        return Promise.resolve();
+      });
+  }
+  getRTPScore(){
+    this.log.debug('Entry getRTPScore');
+    const  cmd = 'var aveValues = {produceScore: 0,consumeScore: 0};'+
+    'var  aveproducescore = 0;var  sumeproducesize = 0;var  aveconsumescore = 0;var  sumeconsumesize = 0;'+
+    'context.rooms.forEach((room)=>{room.forEachClient((client)=>{'+
+        'for(const producer of client._producers.values()){const score = producer.score;aveproducescore  += score[0].score;sumeproducesize += 1;}'+
+        'for(const consume of client._consumers.values()){aveconsumescore += consume.score.score;sumeconsumesize += 1;}});});'+
+    'if(sumeproducesize != 0){aveValues.produceScore =  aveproducescore/sumeproducesize;}'+
+    'if(sumeconsumesize != 0){aveValues.consumeScore =  aveconsumescore/sumeconsumesize;}'+'console.log(JSON.stringify(aveValues));';
+
+    return this.rovClient.runInComponentList(cmd, this.rovClient.components.erizoAgents)
+      .then((results) => {
+        // this.log.info(`getRTPScore return :${results}`);
+        let totalProduceScore = 0;
+        let totalConsumeScore = 0;
+        let size = 0;
+        results.forEach((result) => {
+          const parsedResult = JSON.parse(result);
+          totalProduceScore += parsedResult.produceScore;
+          totalConsumeScore += parsedResult.consumeScore;
+          size += 1;
+        });
+        //计算平均值
+        let  aveProduceScore = 10;
+        let  aveConsumeScore = 0;
+        if(size != 0){
+          aveProduceScore = totalProduceScore/size;
+          aveConsumeScore = totalConsumeScore/size;
+        }
+
+        this.prometheusMetrics.produceScore.set(aveProduceScore);;
+        this.prometheusMetrics.consumeScore.set(aveConsumeScore);
         return Promise.resolve();
       });
   }
@@ -212,7 +237,8 @@ class RovMetricsGatherer {
       .then(() => this.getTotalClients())
       .then(() => this.getTotalPublishersAndSubscribers())
       .then(() => this.getActiveProcesses())
-      .then(() => this.getWorkerMetrics());
+      .then(() => this.getWorkerMetrics())
+      .then(() => this.getRTPScore());
   }
 }
 

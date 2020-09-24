@@ -23,7 +23,7 @@ spec:
         - name: gianthub-registry-key
       containers:
         - name: rov
-          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
+          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.1.0
           args: ["--ROV"]
           imagePullPolicy: IfNotPresent
           resources:

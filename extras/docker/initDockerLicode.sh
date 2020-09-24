@@ -15,6 +15,7 @@ parse_arguments(){
     NUVE=true
     ERIZOCONTROLLER=true
     ERIZOAGENT=true
+    ROV=true
 
   else
     while [ "$1" != "" ]; do
@@ -33,6 +34,9 @@ parse_arguments(){
         ;;
         "--erizoAgent")
         ERIZOAGENT=true
+        ;;
+        "--ROV")
+        ROV=true
         ;;
       esac
       shift
@@ -123,6 +127,13 @@ run_erizoAgent() {
   node erizoAgent.js &
 }
 
+run_ROV() {
+  echo "String Rov"
+  cd $ROOT/erizo_controller/ROV
+  node rovMetricsServer.js &
+}
+
+
 parse_arguments $*
 
 cd $ROOT/scripts
@@ -196,6 +207,13 @@ if [ "$ERIZOAGENT" == "true" ]; then
   fi
   
   run_erizoAgent
+fi
+
+if [ "$ROV" == "true" ];then
+  if [ $RABBITMQ_URL ]; then
+    echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+  run_ROV
 fi
 
 

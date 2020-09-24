@@ -237,7 +237,6 @@ class RovMetricsGatherer {
     
     return this.rovClient.runInComponentList(cmd,this.rovClient.components.erizoControllers)
       .then((results) => {
-        this.log.debug(`quanjie-----result  :${results}`);
         var totalconst = 0;
         var size = 0;
         var ave_cost = 0;

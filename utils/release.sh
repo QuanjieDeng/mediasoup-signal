@@ -1,33 +1,30 @@
 #!/bin/bash
 
+
 usage() {
 cat << EOF
-usage: $0 [-p|-r] -v vX
+usage: $0  -v v1.0.2 -p v1.0.1
 
-Creates a pre/release
+Creates a release
 OPTIONS:
    -h      Show this message
-   -p      Creates or Updates a new Prerelease with the given name
-   -r      Creates a release with the given name
    -v      Version (vX)
+   -p      pre Version(vX)
 EOF
 }
 
-while getopts “hpurv:” OPTION
+while getopts “hv:p:” OPTION
 do
   case $OPTION in
     h)
       usage
       exit
       ;;
-    p)
-      MODE="PRERELEASE"
-      ;;
-    r)
-      MODE="RELEASE"
-      ;;
     v)
       VERSION="$OPTARG"
+      ;;
+    p)
+      PVERSION="$OPTARG"
       ;;
     ?)
       usage
@@ -36,95 +33,61 @@ do
   esac
 done
 
-echo "INFO: Mode ($MODE) Version ($VERSION)"
+echo  $VERSION
+echo  $PVERSION
 
-if [ -z "$MODE" ] || [ -z "$VERSION" ]; then
-  echo ERROR: Please provide -p or -r and -v
+if [ -z "$VERSION" ] || [ -z " $PVERSION" ]; then
+  echo ERROR: Please provide -v  -p
   usage
   exit
 fi
 
-mkdir -p ~/.ssh
-ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
 COMMIT=`git rev-list -n 1 HEAD`
-git fetch
-git checkout $COMMIT
+LOGS=`git log $PVERSION..$COMMIT --oneline | perl -p -e 's/\n/\\\\n/' | sed -e s/\"//g`
+echo  $LOGS
 
-CURRENT_RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
-PREVIOUS_VERSION=v`expr ${CURRENT_RELEASE_MAJOR} - 1`
-CURRENT_PRERELEASE_MINOR=`git ls-remote --tags | grep pre-${VERSION} | sed "s/.*pre-${VERSION}\.//g" | sort -n | tail -1`
+RELEASEMSG="### Detailed PR List:\\n $LOGS"
+echo ${RELEASEMSG}
+
+RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
 GITHUB_URL="https://api.github.com/repos/lynckia/licode"
+WORKERDIR="MEDIASOUP_SIGNALE_RELEASEBUILD"
+GIT_USER="dengquanjie"
+GIT_PWD="QuanjieDeng%4055"
+token="j-u8ZkAFK51XnWs_s61F"
+DOCKER_USER="dengquanjie"
+DOCKER_PASS="Ztgame%40123"
+DOCKER_TAG=${RELEASE_MAJOR}
+DOCKER_NAME="docker-registry.ztgame.com.cn/im/mediasoup-signal:${DOCKER_TAG}"
+GITLAB_RELEASE_TAG="v${RELEASE_MAJOR}"
+echo  "release_version:"${RELEASE_MAJOR}
+echo  "docker_tag:"${DOCKER_TAG}
+echo  "gitlab_release_tag:"${GITLAB_RELEASE_TAG}
+echo  "dockerhub_name:"${DOCKER_NAME}
 
-SHORT_GIT_HASH=`echo ${COMMIT} | cut -c -7`
+#build  images
+rm -rf   ${WORKERDIR}
+mkdir    ${WORKERDIR}
+cd ${WORKERDIR}
+git clone https://${GIT_USER}:${GIT_PWD}@git.devcloud.ztgame.com/realtimevoice/mediasoup-signal.git
+cd mediasoup-signal
+docker  build  -t    ${DOCKER_NAME} ./
+rm -rf   ${WORKERDIR}
 
-curl -s -u ${GITHUB_OAUTH_USER}:${GITHUB_OAUTH_TOKEN} -X GET ${GITHUB_URL}/releases/tags/${VERSION} > /dev/null 2>&1
-if [ $? -eq 1 ]; then
-  echo WARNING: No previous version found
-  PREVIOUS_VERSION=HEAD~10
-fi
+#create release tag whit gitlab  
+curl --request POST --header "PRIVATE-TOKEN: $token"  "https://git.devcloud.ztgame.com//api/v4/projects/85/repository/tags?tag_name=$VERSION&ref=master"
+echo "----------------------------------------------"
 
-if [ -z "$CURRENT_PRERELEASE_MINOR" ]; then
-  # Create a new PREPRELEASE
-  NEXT_PRERELEASE_MINOR=1
-else
-  NEXT_PRERELEASE_MINOR=`expr ${CURRENT_PRERELEASE_MINOR} + 1`
-fi
+DOCKER_IMAGES_URL="https://docker-registry.ztgame.com.cn/harbor/projects/43/repositories/im%2Fmediasoup-signal/tags/"${RELEASE_MAJOR}
+#创建 release 版本 
+echo $RELEASEMSG
 
-LATEST_PRERELEASE_NAME="pre-${VERSION}.${CURRENT_PRERELEASE_MINOR}"
-NEXT_PRERELEASE_NAME="pre-${VERSION}.${NEXT_PRERELEASE_MINOR}"
-RELEASE_NAME="${VERSION}"
+data='{ "name": "'$VERSION'", "tag_name": "'$VERSION'", "description": "'${RELEASEMSG}'" , "ref":"'$VERSION'" ,"assets": { "links": [{ "name": "Docker-images", "url": "'${DOCKER_IMAGES_URL}'" }] } }' 
 
-URL=`curl -s -u ${GITHUB_OAUTH_USER}:${GITHUB_OAUTH_TOKEN} -X GET ${GITHUB_URL}/releases/tags/${LATEST_PRERELEASE_NAME} | jq -r '.url'`
+curl   --header 'Content-Type: application/json' --header "PRIVATE-TOKEN: $token" --data "$data" --request POST  "https://git.devcloud.ztgame.com/api/v4/projects/85/releases"
 
-if [ "$MODE" = "PRERELEASE" ]; then
-  # Download docker
-  docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-  docker pull lynckia/licode:${SHORT_GIT_HASH}
-
-  # Tag with minor version and staging
-  docker tag lynckia/licode:${SHORT_GIT_HASH} lynckia/licode:${NEXT_PRERELEASE_NAME}
-  docker tag lynckia/licode:${SHORT_GIT_HASH} lynckia/licode:staging
-  docker tag lynckia/licode:${SHORT_GIT_HASH} lynckia/licode:latest
-  docker push lynckia/licode:${NEXT_PRERELEASE_NAME}
-  docker push lynckia/licode:staging
-  docker push lynckia/licode:latest
-
-  LOGS=`git log $PREVIOUS_VERSION..$COMMIT --oneline | perl -p -e 's/\n/\\\\n/' | sed -e s/\"//g`
-  DESCRIPTION="### Detailed PR List:\\n$LOGS"
-
-  if [ "$URL" = "null" ]; then
-    echo Create new Prerelease...
-    curl -s -u ${GITHUB_OAUTH_USER}:${GITHUB_OAUTH_TOKEN} -H "Content-Type: application/json" -X POST -d "{\"tag_name\":\"${NEXT_PRERELEASE_NAME}\",\"name\":\"${VERSION}\",\"target_commitish\":\"${COMMIT}\",\"prerelease\":true,\"draft\":false,\"body\":\"${DESCRIPTION}\"}" ${GITHUB_URL}/releases
-  else
-    echo Update Prerelease...
-    curl -s -u ${GITHUB_OAUTH_USER}:${GITHUB_OAUTH_TOKEN} -H "Content-Type: application/json" -X PATCH -d "{\"tag_name\":\"${NEXT_PRERELEASE_NAME}\",\"target_commitish\":\"${COMMIT}\",\"body\":\"${DESCRIPTION}\"}" ${URL}
-  fi
-
-  echo Done.
-elif [ "$MODE" = "RELEASE" ]; then
-  if [ -z "$CURRENT_PRERELEASE_MINOR" ] || [ "$URL" = "null" ]; then
-    echo ERROR: Prerelease does not exist
-    usage
-    exit 1
-  fi
-
-  # Download docker
-  docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-  docker pull lynckia/licode:${LATEST_PRERELEASE_NAME}
-
-  # Tag with minor version and staging
-  docker tag lynckia/licode:${LATEST_PRERELEASE_NAME} lynckia/licode:${RELEASE_NAME}
-  docker tag lynckia/licode:${LATEST_PRERELEASE_NAME} lynckia/licode:latest
-  docker push lynckia/licode:${RELEASE_NAME}
-  docker push lynckia/licode:latest
-
-  # TODO(javier): Remove lynckia/licode:XXX that belongs to this release
-
-  # Create release in github
-  echo Creating Release...
-  curl -s -u ${GITHUB_OAUTH_USER}:${GITHUB_OAUTH_TOKEN} -H "Content-Type: application/json" -X PATCH -d "{\"tag_name\":\"${RELEASE_NAME}\",\"prerelease\":false}" ${URL}
-  echo Done.
-
-  # TODO(javier): Update readthedocs
-fi
+# push docker image to hub
+docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+docker push  ${DOCKER_NAME}
+docker  rmi      ${DOCKER_NAME}

@@ -63,6 +63,13 @@ config.mediasoup.plainTransportOptions = 		{
 - ec     直接切换目录  erizo_controller/erizoController   执行 node erizoController.js   
 - ea     直接切换目录  erizo_controller/erizoAgent   执行  node  erzioAgent.js
 
+## 版本制作
+在utils文件夹下提供了版本制作的脚本 release.sh
+该脚本接收两个参数  v1 和v2
+v1 为本次目的版本 v2 为上一版本号
+脚本在gitlab上创建对应的release tag  
+并制作对应tag的docker镜像推送到hub中
+
 
 ## Docker
 ### 镜像制作

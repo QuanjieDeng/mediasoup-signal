@@ -51,7 +51,6 @@ RELEASEMSG="### Detailed PR List:\\n $LOGS"
 echo ${RELEASEMSG}
 
 RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
-GITHUB_URL="https://api.github.com/repos/lynckia/licode"
 WORKERDIR="MEDIASOUP_SIGNALE_RELEASEBUILD"
 GIT_USER="dengquanjie"
 GIT_PWD="QuanjieDeng%4055"

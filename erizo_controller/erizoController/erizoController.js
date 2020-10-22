@@ -1,10 +1,18 @@
 /* global require, setInterval, clearInterval, exports */
-
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'ec',
+    instanceName: 'ec',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 /* eslint-disable no-param-reassign */
 require('stackup');
 const rpcPublic = require('./rpc/rpcPublic');
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
 const { AwaitQueue } = require('awaitqueue');

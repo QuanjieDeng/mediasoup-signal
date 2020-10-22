@@ -277,3 +277,10 @@ config.ratelimit.signal = {
     points : 10, //Number of points
     duration : 1 // Per second(s)
 };
+
+config.skywalking = {};
+//set the url  of  skywalking-collection
+config.skywalking.url = "localhost:11800";
+config.skywalking.authentication = "";
+//set the switch open or  not
+config.skywalking.open = true 

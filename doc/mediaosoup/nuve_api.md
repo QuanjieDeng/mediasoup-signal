@@ -104,8 +104,6 @@ python 环境需要把密文转为ascii即可
 |options |是  |json对象 | 参数    |
 | |参数  |必选 | 类型    |说明|
 | |data  |否 | json对象    |房间的附加信息|
-| |p2p  |否| bool    |标识是不是点对点会话|
-| |mediaConfiguration  |否 | string    |房间媒体配置字符串|
 | |eapolicy  |是 | string    |房间级联策略 ROOM-BEST 或者 TTL-BEST|
 
 **关于eapolicy**
@@ -122,9 +120,7 @@ python 环境需要把密文转为ascii即可
       "date":{
 	  	"room_color": 'red',
 		"room_description": 'Room for testing metadata'
-	   },
-      "p2p": false,
-      "mediaConfiguration": "default"
+	   }
     }
   }
 ```
@@ -134,8 +130,6 @@ python 环境需要把密文转为ascii即可
 ``` 
 {
 	'name': 'TEST-ROOM',
-	'p2p': True,
-	'mediaConfiguration': 'default',
 	'_id': '5e573703a4cd0a0b66b4ea8d'
 }
 ```
@@ -145,9 +139,7 @@ python 环境需要把密文转为ascii即可
 |参数名|类型|说明|
 |:-----  |:-----|-----                           |
 |name |string   |房间名称|
-|p2p |bool   |是否为点对点会话|
 |_id |string   |房间ID|
-|mediaConfiguration |string   |房间的媒体配置信息|
 
 ## [房间列表](#目录)
 **请求URL：** 
@@ -210,7 +202,6 @@ ret-code  200
 {
 	'name': 'basicExampleRoom',
 	'data': {'basicExampleRoom': True},
-	'mediaConfiguration': 'default',
 	'_id': '5dbf9e52e2b9d87712463b70'
 }
 ```

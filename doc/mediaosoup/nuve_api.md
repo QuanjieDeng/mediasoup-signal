@@ -2,6 +2,16 @@
 
 [nuve鉴权说明](#nuve鉴权说明)
 
+[service](#service)
+
+[创建service](#创建service)
+
+[获取service列表](#获取service列表)
+
+[获取单个service信息](#获取单个service信息)
+
+[删除单个service](#删除单个service)
+
 [Rooms](#rooms)
 
 [创建房间](#创建房间)
@@ -25,6 +35,7 @@
 [删除用户](#删除用户)
 
 [代码示例](#代码示例)
+
 
 # 说明
 licode的接口部分分成两部分nuve  EC
@@ -80,6 +91,159 @@ mauth_role=bb
 对key 和 str 使用sha1使用hmac加密 得到密文A
 对密文A再次使用base64加密 得到最终密文
 python 环境需要把密文转为ascii即可
+
+
+# [service](#目录)
+service是用来区分不同的服务域提出的概念，一个service对应的是一类开发者的语音服务
+一个service 有三个基本的属性  name(名称)  serviceid(服务ID)  key(服务key)
+每个service的serviceid-key对都是全局唯一的
+
+在service之上，还有个superservice概念，他代表服务集群本身，
+他提供id-key对用来对service相关的操作做鉴权
+
+service相关的接口，在认证头中使用的必须是superserver对应的id-key对
+
+## [创建service](#目录)
+
+**请求URL：** 
+- ` http://xx.com/services `
+  
+**请求方式：**
+- POST 
+
+**参数：** 
+
+|参数名|必选|类型|说明|
+|:----|:---|:----- |-----   |
+|name |是  |string |服务名称 |
+|key  |是  |string |服务key     |
+
+
+**请求示例**
+```
+  {
+    "name": "XXX游戏语音服务",
+    "key": "123123"
+  }
+```
+
+ **返回示例**
+
+``` 
+ret-code 200 
+5f97c060070b490b49a7b7f1  服务ID
+
+ret-code 401
+认证不通过 
+
+ret-code 200
+参数错误
+
+```
+
+## [获取service列表](#目录)
+**请求URL：** 
+- ` http://xx.com/services `
+  
+**请求方式：**
+- GET 
+
+
+ **返回示例**
+
+``` 
+ret-code  401
+认证失败 
+
+ret-code 200
+[
+	{
+		'_id': '5e840a110410a611bce8f4d2',
+		'name': 'service-A',
+		'key': '123',
+		'rooms':[
+			{
+				'_id':"112312312",
+				'name':'room-a'
+			},
+			{
+				'_id':"112312312",
+				'name':'room-B'
+			},
+		]
+	},
+	{
+		'_id': '5e840a110410a611bce8f4d2',
+		'name': 'service-B',
+		'key': '123',
+		'rooms':[
+			{
+				'_id':"112312312",
+				'name':'room-a'
+			},
+			{
+				'_id':"112312312",
+				'name':'room-B'
+			},
+		]
+	},
+]
+```
+
+## [获取单个service信息](#目录)
+**请求URL：** 
+- ` http://xx.com//services/:services_id `
+  
+**请求方式：**
+- GET 
+
+ **返回示例**
+
+``` 
+ret-code  401 
+认证失败 
+
+ret-code 404
+未找到service
+
+ret-code  200
+
+{
+	'_id': '5e840a110410a611bce8f4d2',
+	'name': 'service-B',
+	'key': '123',
+	'rooms':[
+		{
+			'_id':"112312312",
+			'name':'room-a'
+		},
+		{
+			'_id':"112312312",
+			'name':'room-B'
+		},
+	]
+}
+```
+
+## [删除单个service](#目录)
+**请求URL：** 
+- ` http://xx.com/services/:service_id `
+  
+**请求方式：**
+- DELETE 
+
+ **返回示例**
+
+``` 
+ret-code 401
+认证失败 
+
+ret-code 404
+未找到service
+
+ret-code 200
+删除成功
+```
 
 # [Rooms](#目录)
 一个房间就是一个音频会议室，每个与会人员都可以推流或者是订阅其他的流

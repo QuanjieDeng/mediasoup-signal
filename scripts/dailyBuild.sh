@@ -3,7 +3,7 @@
 ## 创建临时文件夹
 WORKERDIR="MEDIASOUP_SIGNALE_DAILYBUILD"
 GIT_USER="dengquanjie"
-GIT_PWD="QuanjieDeng%4055"
+GIT_PWD="QuanjieDeng%4011"
 DOCKER_NAME="mediasoup-signal"
 DOCKER_TAG="vv"
 

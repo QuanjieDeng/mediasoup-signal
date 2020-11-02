@@ -1,9 +1,18 @@
 /* global require */
-
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'ea',
+    instanceName: 'ea',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
+
 
 // Configuration default values
 global.config = config || {};

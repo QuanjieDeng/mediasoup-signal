@@ -147,3 +147,17 @@ node  rovMetricsServer.js
 - produceScore: mediasoup报告produce传输RTP质量分数  0-10
 - consumeScore: mediasoup报告comsume传输RTP质量分数  0-10
 - rpcCost: rpc调用平均耗时-毫秒
+
+
+## 链路追踪
+- 链路追踪使用skywalking，我们在nuve/ec/ea的进程中都加载了skywalking的数据搜集插件
+### 配置
+- 你可以通过配置项,去配置是否开启等设置，模式是开启的模式
+```
+config.skywalking = {};
+//set the url  of  skywalking-collection
+config.skywalking.url = "localhost:11800";
+config.skywalking.authentication = "";
+//set the switch open or  not
+config.skywalking.open = true 
+```

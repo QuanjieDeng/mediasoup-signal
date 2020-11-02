@@ -283,4 +283,4 @@ config.skywalking = {};
 config.skywalking.url = "localhost:11800";
 config.skywalking.authentication = "";
 //set the switch open or  not
-config.skywalking.open = true 
+config.skywalking.open = false;

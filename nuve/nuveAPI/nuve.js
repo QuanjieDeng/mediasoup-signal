@@ -1,6 +1,16 @@
 /* global require, __dirname */
 
 // eslint-disable-next-line import/no-extraneous-dependencies
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'nuve',
+    instanceName: 'nuve',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 const express = require('express');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const bodyParser = require('body-parser');
@@ -11,7 +21,6 @@ const rateLimiteGlobalQuen =  require('./../common/Middleware/rateLimiteGlobalQu
 const ralteLimiterSingle =  require('./../common/Middleware/ralteLimiterSingle')
 
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
 
 const app = express();
 console.log(`ratelimit  global:${config.nuve.ratelimit.global.global} quen:${config.nuve.ratelimit.global.quen} signal:${config.nuve.ratelimit.signal.signal}`);

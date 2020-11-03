@@ -3,11 +3,14 @@
 
 NAMESPACE=200008-im
 
-#创建私有仓库secret
-# kubectl -n 200008-im  create secret docker-registry registry-key  --docker-server=docker-registry.ztgame.com.cn  --docker-username=dengquanjie   --docker-password=Ztgame@123   --docker-email=dengquanjie@ztgame.com
 
 #Create Namespace  
-# kubectl   create  namespace  ${NAMESPACE}
+kubectl   create  namespace  ${NAMESPACE}
+
+
+#创建私有仓库secret
+kubectl -n    ${NAMESPACE}  create secret docker-registry registry-key  --docker-server=docker-registry.ztgame.com.cn  --docker-username=dengquanjie   --docker-password=Ztgame@123   --docker-email=dengquanjie@ztgame.com
+
 
 #Create  ConfigMap
 kubectl     create   configmap   licode-config   --from-file=./conf      -n    ${NAMESPACE}
@@ -32,8 +35,6 @@ kubectl  apply  -f    ./nuve.yaml    -n   ${NAMESPACE}
 
 #Create  nuve-serice
 kubectl  apply  -f    ./nuve-service-clusterip.yaml    -n   ${NAMESPACE}
-
-
 
 #Create  EC
 kubectl  apply  -f    ./ec.yaml    -n   ${NAMESPACE}

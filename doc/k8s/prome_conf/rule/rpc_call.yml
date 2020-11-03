@@ -1,0 +1,10 @@
+groups:
+- name: mediasoup_transfer_server
+  rules:
+  - alert: HighRPCCallTime
+    expr: max_over_time(mediasoup_rpcCost[10m:]) > 10
+    labels:
+      type: rpc_call
+    annotations:
+      summary: rpc调用耗时过高
+      description: EC到EA的RPC调用耗时出现异常,请注意

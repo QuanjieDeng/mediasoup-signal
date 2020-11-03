@@ -1,0 +1,10 @@
+groups:
+- name: mediasoup_transfer_server
+  rules:
+  - alert: HigthClientGrowRate
+    expr:  rate(mediasoup_active_clients[1m])  > 300
+    labels:
+      type: client_grow
+    annotations:
+      summary: 用户增长率过高
+      description: 用户增长率超过%300,请注意

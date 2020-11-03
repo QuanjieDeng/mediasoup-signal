@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+    #   annotations: 
+    #     'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
+      labels:
+        app: prometheus
+    spec:
+    #   imagePullSecrets:
+    #     - name: gianthub-registry-key
+      containers:
+        - name: prometheus
+          image: prom/prometheus
+        #   args: ["--ROV"]
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+          - containerPort: 9090
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+           - name: prometheus-config
+             mountPath: /etc/prometheus/prometheus.yml 
+             subPath: prometheus.yml
+           - name: prometheus-rule-config
+             mountPath: /etc/prometheus/rule
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name:  prometheus-rule-config
+          configMap:
+            name:  prometheus-rule-config
+                

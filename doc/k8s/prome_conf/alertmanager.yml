@@ -1,0 +1,19 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['mediasoup_transfer_server']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 10s
+  receiver: 'web.hook'
+receivers:
+- name: 'web.hook'
+  webhook_configs:
+  - url: 'http://192.168.94.145:8000/api/webhook/feishu?token=8c2dd62902d7d20552b200da5258c90b'
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']

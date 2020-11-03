@@ -1,0 +1,29 @@
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+    name: grafana
+spec:
+    accessModes:
+        - ReadWriteOnce
+    capacity:
+        storage: 10Gi
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: grafana
+    nfs:
+        path:  /nfs-share/grafana
+        server: 192.168.94.117
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+    name: grafana
+spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: grafana

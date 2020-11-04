@@ -18,6 +18,13 @@ spec:
       containers:
         - image: grafana/grafana
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
           name: grafana
           env:
             - name: GF_SECURITY_ADMIN_USER

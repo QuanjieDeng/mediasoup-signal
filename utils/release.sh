@@ -47,8 +47,12 @@ COMMIT=`git rev-list -n 1 HEAD`
 LOGS=`git log $PVERSION..$COMMIT --oneline | perl -p -e 's/\n/\\\\n/' | sed -e s/\"//g`
 echo  $LOGS
 
+
 RELEASEMSG="### Detailed PR List:\\n $LOGS"
+RELEASEMSG=`echo ${RELEASEMSG//\\\\n/"\r\n - "}`
+# RELEASEMSG=`echo ${RELEASEMSG//\\\\n/"<br><br/>"}`
 echo ${RELEASEMSG}
+
 
 RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
 WORKERDIR="MEDIASOUP_SIGNALE_RELEASEBUILD"

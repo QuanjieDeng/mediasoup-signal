@@ -129,12 +129,19 @@ exports.EcCloudHandler = (spec) => {
   }
 
   const checkEAStatus =  ()=>{
+    let  ok_ea_num = 0;
     forEachAgent((agentId, agentInList)=>{
-      if(agentInList.timeout<=1){
+      if(agentInList.timeout <= 1){
+        ok_ea_num +=1;
         return true;
       }
     });
-    return false;
+
+    if(ok_ea_num <= 0){
+      return false;
+    }else{
+      return true;
+    }
   }
 
 

@@ -58,6 +58,7 @@ exports.EcCloudHandler = (spec) => {
     // Check agents timeout
     forEachAgent((agentId, agentInList) => {
       agentInList.timeout += 1;
+
       if (agentInList.timeout > EA_TIMEOUT / GET_EA_INTERVAL) {
         log.warn('message: agent timed out is being removed, ' +
                  `code: ${WARN_TIMEOUT}, agentId: ${agentId}`);
@@ -100,6 +101,15 @@ exports.EcCloudHandler = (spec) => {
 
 
   that.getMeiasoupWorker =async  (roomid,ip,eapolicy,erizoControllerid,callbackFor) =>{
+    /*
+    提前判断EA的状态，至少保证有一个EA处于可用状态，在重试状态的EA，不作为备选对象
+    */
+    let ea_ok  = checkEAStatus();
+    if(!ea_ok){
+      log.warn(`message: getMeiasoupWorker no ea's status os ok!`);
+      callbackFor('timeout');
+      return;
+    }
     let agentQueue =await getErizoAgentPolicy(ip,eapolicy);
 
     log.info(`message: getMeiasoupWorker, agentId: ${agentQueue} roomid:${roomid} ip:${roomid}`);
@@ -118,7 +128,14 @@ exports.EcCloudHandler = (spec) => {
 
   }
 
-
+  const checkEAStatus =  ()=>{
+    forEachAgent((agentId, agentInList)=>{
+      if(agentInList.timeout<=1){
+        return true;
+      }
+    });
+    return false;
+  }
 
 
   const   getErizoAgentPolicy = async (ip,eapolicy="ROOM-BEST")=>{

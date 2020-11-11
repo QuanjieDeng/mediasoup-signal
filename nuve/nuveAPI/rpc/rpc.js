@@ -15,7 +15,7 @@ config.rabbit = config.rabbit || {};
 config.rabbit.host = config.rabbit.host || 'localhost';
 config.rabbit.port = config.rabbit.port || 5672;
 
-const TIMEOUT = 3000;
+const TIMEOUT = 10000;
 
 let corrID = 0;
 const map = {}; // {corrID: {fn: callback, to: timeout}}

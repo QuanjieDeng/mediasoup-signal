@@ -53,7 +53,7 @@ echo ${RELEASEMSG}
 RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
 WORKERDIR="MEDIASOUP_SIGNALE_RELEASEBUILD"
 GIT_USER="dengquanjie"
-GIT_PWD="QuanjieDeng%4055"
+GIT_PWD="QuanjieDeng%4011"
 token="j-u8ZkAFK51XnWs_s61F"
 DOCKER_USER="dengquanjie"
 DOCKER_PASS="Ztgame%40123"

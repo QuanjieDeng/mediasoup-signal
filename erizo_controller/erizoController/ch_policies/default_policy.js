@@ -33,6 +33,12 @@ exports.getErizoAgent = (agents, agentId) => {
   const agentIds = Object.keys(agents);
   for (let i = 0; i < agentIds.length; i += 1) {
     const agent =  agents[agentIds[i]];
+    /*
+    EA的timeout大于1,表明该EA当前处于 断连容忍状态，不参与服务
+    */
+    if(agent.timeout > 1){
+      continue;
+    }
     var newagent = {
       rpc_id:agent.info.rpc_id,
       rooms:agent.info.rooms,

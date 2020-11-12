@@ -83,16 +83,16 @@ exports.EcCloudHandler = (spec) => {
       callback('timeout');
       return;
     }
-
     amqper.callRpc('ErizoAgent', 'getMediasoupWork', [roomid,erizoControllerid], { callback(resp) {
       if (resp === 'timeout') {
         getMeiasoupWorkerTryAgain((count += 1),roomid,erizoControllerid, callback);
       } else {
-        log.info(`message: getMeiasoupWorker success, TryAgain:${count},roomid: ${roomid}, ` +
-          `agentId: ${agentId}, routerId: ${routerId}`);
         const roomid = resp.roomId;
         const agentId = resp.agentId;
         const routerId = resp.routerId;
+        log.info(`message: getMeiasoupWorker success, TryAgain:${count},roomid: ${roomid}, ` +
+          `agentId: ${agentId}, routerId: ${routerId}`);
+
         callback(roomid, agentId, routerId);
       }
     } });
@@ -126,7 +126,7 @@ exports.EcCloudHandler = (spec) => {
       }
     } });
 
-  }
+  } 
 
   const checkEAStatus =  ()=>{
     let  ok_ea_num = 0;

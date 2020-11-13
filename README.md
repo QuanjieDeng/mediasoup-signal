@@ -121,6 +121,11 @@ export  DEBUG=mediasoup:WARN*
 
 ## K8S
 - 系统如果需要在K8S环境中部署，参考  doc/k8s部分
+### K8S环境中worker子进程的日志如何打开
+-子进程的日志分为两级，一级是worker进程的日志 二级是nodejs层面的日志
+nodejs层面只是控制要显示哪些等级，具体的可以在  licode_config.js 配置文件中设置
+子进程的日志等级通过环境变量 DEBUG的值进行设置，需要注意的是，nodejs层面只是对worker子进程的日志进行过滤，
+前提是wokrer子进程把日志抛出
 
 ## ROV数据采集
 - ROV组件做为遥测数据源，提供遥测数据，供Prometheus等开源组件进行展示，

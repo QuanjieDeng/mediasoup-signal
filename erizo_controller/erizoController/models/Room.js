@@ -15,6 +15,7 @@ class Room extends events.EventEmitter {
     this.erizoControllerId = erizoControllerId;
     this.amqper = amqper;
     this.ecch = ecch;
+    
     /*
     erizoAgentId 记录当前房间所在的EA,只有为LOOP模式时，该值记录了房间所在的EA
     */
@@ -25,12 +26,9 @@ class Room extends events.EventEmitter {
     this.routerId =  routerId;
     this.eapolicy = eapolicy;
     /*
-    在TLL-BEST模式时，AgentRouterMap存储当前房间所有的EA-router对
-    key为eaid+routerid组合 value为结构体存储具体的ID信息
-
+    在TLL-BEST模式时，sfum存储当前房间所有的EA-router对
+    负责管理房间所属的EA,和发起SFU级联的相关逻辑
     */
-    // this.AgentRouterMap = new Map();
-    // this.AgentRouterMap.set(`${agentId}@${routerId}`,{agentId:agentId,routerId:routerId});
     this.sfum =  sfum;
 
   }
@@ -72,6 +70,8 @@ class Room extends events.EventEmitter {
   //    this.AgentRouterMap.set(ea_router_key,{agentId:agentId,routerId:routerId});
   //   }
   // }
+
+
 
   addRouter(agentId,routerId){
     this.sfum.addRouter(agentId,routerId);
@@ -124,7 +124,7 @@ class Room extends events.EventEmitter {
   onClientDisconnected(client) {
     this.sfum.delClient(client.agentId,client.routerId);
     if (this.clients.size === 0) {
-      log.debug(`message: deleting empty room, roomId: ${this.id}`);
+      log.info(`message: deleting empty room, roomId: ${this.id}`);
       this.emit('room-empty');
     }
   }

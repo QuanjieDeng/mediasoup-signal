@@ -9,15 +9,16 @@ const logger = require('./../common/logger').logger;
 // Logger
 const log = logger.getLogger('EcCloudHandler');
 
-const EA_TIMEOUT = 30000;
-const GET_EA_INTERVAL = 2000;
-const AGENTS_ATTEMPTS = 5;
+const EA_TIMEOUT = 10000;  //EA超时阈值
+const GET_EA_INTERVAL = 2000; //EA报活间隔，报活检测次数最大为 EA_TIMEOUT/GET_EA_INTERVAL
+const AGENTS_ATTEMPTS = 5; //获取EA重试最大次数
 const WARN_UNAVAILABLE = 503;
 const WARN_TIMEOUT = 504;
 exports.EcCloudHandler = (spec) => {
   const that = {};
   const amqper = spec.amqper;
   const agents = {};
+  const eventListeners = [];
   let getErizoAgent;
 
   const forEachAgent = (action) => {
@@ -26,6 +27,17 @@ exports.EcCloudHandler = (spec) => {
       action(agentIds[i], agents[agentIds[i]]);
     }
   };
+
+  dispatchEvent = (type, evt) => {
+    eventListeners.forEach((eventListener) => {
+      eventListener(type, evt);
+    });
+  };
+
+  that.addEventListener = (eventListener) => {
+    eventListeners.push(eventListener);
+  };
+
 
   that.getErizoAgents = () => {
     amqper.broadcast('ErizoAgent', { method: 'getErizoAgents', args: [] }, (agent) => {
@@ -62,6 +74,7 @@ exports.EcCloudHandler = (spec) => {
       if (agentInList.timeout > EA_TIMEOUT / GET_EA_INTERVAL) {
         log.warn('message: agent timed out is being removed, ' +
                  `code: ${WARN_TIMEOUT}, agentId: ${agentId}`);
+        dispatchEvent("remove_ea",agentId);
         delete agents[agentId];
       }
     });

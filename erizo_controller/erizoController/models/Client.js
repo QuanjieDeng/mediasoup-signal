@@ -24,6 +24,8 @@ class Client extends events.EventEmitter {
     this.state = 'sleeping'; // ?
     this.rpc_cost_list = [];
     this.ave_cost = 0;
+
+    this.room.ecch.addEventListener(this.OnEcchEventHandler.bind(this));
   }
 
   static async create({ channel, token, options, room,agentId,routerId}){
@@ -38,6 +40,16 @@ class Client extends events.EventEmitter {
         routerId
 			});
     }
+  
+  OnEcchEventHandler(event,msg){
+    log.debug(`message: OnEcchEventHandler event:${event} msg:${msg}`);
+    if(event  == "remove_ea"){
+      if(msg === this.agentId){
+        log.error(`message ea:${msg} disconnected client  whill close`);
+        this.channel.disconnect();
+      }
+    }
+  }
 
 
 

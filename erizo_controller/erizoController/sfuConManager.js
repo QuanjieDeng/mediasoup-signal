@@ -2,7 +2,6 @@
 主要实现SFU级联的核心逻辑
 */
 
-
 const logger = require('./../common/logger').logger;
 const log = logger.getLogger('SFUConManager');
 
@@ -14,9 +13,15 @@ class SFUConManager{
     this.ecch = ecch;
     this.erizoControllerId = erizoControllerId;
     this.eventListeners = [];
+    /*
+    记录一个房间的所有的agent-router对，相当于是维护了在级联模式下，
+    一个房间的所有的ea-router
+    */
     this.AgentRouterMap = new Map();
     /*
-    记录该 ea-router对下 客户端的数量
+    记录该 ea-router对下 客户端的数量,在级联模式下，一个房间会有多个ea,该map
+    存储了每个ea上的客户端的数量
+    [map[eaid+routerid]count(客户端数量)]
     */
     this.AgentRouterClients = new Map();
 
@@ -36,7 +41,7 @@ class SFUConManager{
          return;
        }
        log.info(`message start pipRouter from:${v.routerId}  to:${routerId}`);
-       //发送rpc请求到from 告诉他有你开启piptransport的建立过程
+       //发送rpc请求到from 告诉他由你开启piptransport的建立过程
        var from_ea_id = `ErizoAgent_${v.agentId}`;
        this.amqper.callRpc(from_ea_id, 'handlePipRoute',  [this.roomid,v.routerId,routerId,agentId], { callback(resp){
            log.info(`handlePipRoute rpccallback:${JSON.stringify(resp)}`);

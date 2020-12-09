@@ -13,6 +13,11 @@ const rooms =  erizoAgent.getRooms();
 
 exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
   try {
+    //如果当前状态为0，则对该请求不做处理
+    if(erizoAgent.getMyState() == 0){
+      log.info(`message: getMediasoupWork mystate:${erizoAgent.getMyState()}`);
+      return;
+    }
     /*
     这里使用queue，去保证请求的顺序执行，防止对一个房间重复创建
     */

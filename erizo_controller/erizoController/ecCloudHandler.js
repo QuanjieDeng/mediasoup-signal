@@ -60,7 +60,7 @@ exports.EcCloudHandler = (spec) => {
       });
 
       if (newAgent === true) {
-        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip} rooms:${agent.info.rooms}`);
+        log.info(`message:new EA id:${agent.info.id} ip:${agent.info.ip} rooms:${agent.info.rooms} state:${agent.info.state}`);
         // New agent
         agents[agent.info.id] = agent;
         agents[agent.info.id].timeout = 0;
@@ -173,6 +173,9 @@ exports.EcCloudHandler = (spec) => {
       let count = 0;
       await new Promise((resolve)=>{
         forEachAgent(async(agentId, agentInList)=>{
+            if(agentInList.info.state  == 0){
+              return;
+            }
           // log.info(`message: forEachAgent agentId:${agentId}`);
             var earpcid =`ErizoAgent_${agentId}`
             log.info(`eaid:${earpcid}`);

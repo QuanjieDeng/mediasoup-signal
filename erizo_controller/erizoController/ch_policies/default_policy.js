@@ -39,6 +39,13 @@ exports.getErizoAgent = (agents, agentId) => {
     if(agent.timeout > 1){
       continue;
     }
+    /*
+    检查EA状态，0 标识不可用,不参与服务
+    */
+    if(agent.info.state == 0){
+      log.warn(`message: EA 状态为:${agent.info.state} 跳过，不参与服务`);
+      continue;
+    }
     var newagent = {
       rpc_id:agent.info.rpc_id,
       rooms:agent.info.rooms,

@@ -164,7 +164,7 @@ const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
 const Rooms = require('./models/rooms').Rooms;
 const rooms =   new Rooms(amqper,wm);
 const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata,rooms });
-
+let myState = 1; //1正常  0 不可用
 
 
 rooms.on('updated',function(){
@@ -181,6 +181,7 @@ exports.getAgentId = () => myErizoAgentId;
 exports.getAmqp = () => amqper;
 exports.getRooms = () => rooms;
 exports.getVM = () => wm;
+exports.getMyState = () => myState;
 
 
 run();
@@ -362,3 +363,11 @@ exports.getWorkerInfo =async (callback)=>{
   });
   callback(infolist);
 }
+
+
+
+//add  handle   signal  
+process.on("SIGTERM",function(){
+  log.info(`message: get sineal  SIGTERM set mystate 0`);
+  myState = 0;
+});

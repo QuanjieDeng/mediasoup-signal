@@ -16,8 +16,9 @@ let AWS;
 
 const INTERVAL_TIME_EC_READY = 500;
 const TOTAL_ATTEMPTS_EC_READY = 20;
-const INTERVAL_TIME_CHECK_KA = 1000;
-const MAX_KA_COUNT = 10;
+
+const INTERVAL_TIME_CHECK_KA = 1000;  //每隔INTERVAL_TIME_CHECK_KA增加EC的保活包次数
+const MAX_KA_COUNT = 10;//EC允许的最大保活包间隔次数，和INTERVAL_TIME_CHECK_KA共同作用，控制EC的超时时间
 
 let getErizoController;
 

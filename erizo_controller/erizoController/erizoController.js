@@ -158,7 +158,6 @@ let myId;
 const rooms = new Rooms(amqper, ecch);
 
 let myState;
-
 const addToCloudHandler = (callback) => {
   // eslint-disable-next-line global-require
   const interfaces = require('os').networkInterfaces();
@@ -540,5 +539,11 @@ amqper.connect(() => {
   }
 });
 
+
+//add  handle   signal  
+process.on("SIGTERM",function(){
+  log.info(`message: get sineal  SIGTERM set  my state  0`);
+  nuve.setInfo({ id: myId, state: 0 });
+});
 
 

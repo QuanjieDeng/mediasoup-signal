@@ -13,6 +13,8 @@ WORKDIR /opt
 RUN  apt-get update && apt-get install -y git wget curl
 RUN  apt-get install  -y  python-pip python-dev build-essential
 RUN  apt-get install  -y  python3-pip
+RUN  apt-get install  -y  net-tools
+RUN  apt-get install  -y  curl  
 RUN  apt-get remove  -y  python-pip python3-pip
 COPY  ./get-pip.py     /op/mediasoup-signal/
 RUN   python     /op/mediasoup-signal/get-pip.py

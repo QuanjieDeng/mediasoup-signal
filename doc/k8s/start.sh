@@ -7,10 +7,8 @@ NAMESPACE=200008-im
 #Create Namespace  
 kubectl   create  namespace  ${NAMESPACE}
 
-
 #创建私有仓库secret
-kubectl -n    ${NAMESPACE}  create secret docker-registry registry-key  --docker-server=docker-registry.ztgame.com.cn  --docker-username=dengquanjie   --docker-password=Ztgame@123   --docker-email=dengquanjie@ztgame.com
-
+kubectl -n    ${NAMESPACE}  create secret docker-registry gianthub-registry-key --docker-server=docker-registry.ztgame.com.cn  --docker-username=dengquanjie   --docker-password=Ztgame@123   --docker-email=dengquanjie@ztgame.com
 
 #Create  ConfigMap
 kubectl     create   configmap   licode-config   --from-file=./conf      -n    ${NAMESPACE}

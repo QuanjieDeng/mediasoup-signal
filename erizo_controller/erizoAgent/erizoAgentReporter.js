@@ -1,5 +1,5 @@
 /* global require, exports */
-
+const erizoAgent = require('./erizoAgent');
 
 const os = require('os');
 
@@ -53,7 +53,8 @@ exports.Reporter = (spec) => {
         id: myId,
         rpc_id: `ErizoAgent_${myId}`,
         ip:ip,
-        rooms:rooms.size()
+        rooms:rooms.size(),
+        state:erizoAgent.getMyState()
       },
       metadata: myMeta,
       stats: getStats(),

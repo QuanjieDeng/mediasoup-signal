@@ -18,6 +18,10 @@
 
 ### 配置文件
 - 通过文件创建ConfigMap的方式去创建一个配置文件
+- 配置文件更新时需要重启整个deploment
+```
+kubectl rollout restart deployment +<部署名称>
+```
 
 
 ## 部署步骤

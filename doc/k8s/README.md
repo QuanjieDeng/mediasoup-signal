@@ -40,3 +40,44 @@ kubectl rollout restart deployment +<部署名称>
 
 ## NFS服务器
 - NFS对外公布的路径为 /nfs_mongodb    mongodb的挂载路径为  /nfs_mongodb/mongodb  注意需要配置模式为no_root_squash
+
+
+
+## k8s中资源使用限制&请求
+- EC中一个room平均占用为200字节，10万用户单个节点占用内存大概在20M
+- EA中一个room平均占用200字节，10万用户单个节点占用内存大概在20M
+### k8s中可以通过配置resuource字段，实现对pod中容器的资源使用限制和请求 
+- 请求resource.request  标识该pod的基础要求，只有符合该要求的node才能部署pod
+- 限制resource.limit    标识该pod的限制，当pod的实际使用量超过限制，将会被重新调用
+一个比较完善的请求示例
+```
+       containers:
+        - name: nuve
+          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
+          args: ["--nuve"]
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "64Mi" //设置最低配置内存64M
+              cpu: "250m"    
+            limits:
+              memory: "128Mi" //设置最大内存128M
+              cpu: "500m"
+```
+- 内存单位
+内存资源的基本单位是字节（byte）。你可以使用这些后缀之一，将内存表示为 纯整数或定点整数：E、P、T、G、M、K、Ei、Pi、Ti、Gi、Mi、Ki。 例如，下面是一些近似相同的值：
+
+128974848, 129e6, 129M , 123Mi
+
+- cpu单位
+CPU 资源以 CPU 单位度量。Kubernetes 中的一个 CPU 等同于：
+
+1 个 AWS vCPU
+1 个 GCP核心
+1 个 Azure vCore
+裸机上具有超线程能力的英特尔处理器上的 1 个超线程
+
+小数值是可以使用的。一个请求 0.5 CPU 的容器保证会获得请求 1 个 CPU 的容器的 CPU 的一半。 
+你可以使用后缀 m 表示毫。例如 100m CPU、100 milliCPU 和 0.1 CPU 都相同。 精度不能超过 1m。
+
+CPU 请求只能使用绝对数量，而不是相对数量。0.1 在单核、双核或 48 核计算机上的 CPU 数量值是一样的。

@@ -17,7 +17,8 @@ const RECONNECTION_TIMEOUT = 10000;
 const calculateSignature = (token, key) => {
   const toSign = `${token.tokenId},${token.host}`;
   const signed = crypto.createHmac('sha1', key).update(toSign).digest('hex');
-  return (new Buffer(signed)).toString('base64');
+  // return (new Buffer(signed)).toString('base64');
+  return (Buffer.from(signed)).toString('base64');
 };
 
 const checkSignature = (token, key) => {

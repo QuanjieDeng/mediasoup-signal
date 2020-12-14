@@ -81,3 +81,77 @@ CPU 资源以 CPU 单位度量。Kubernetes 中的一个 CPU 等同于：
 你可以使用后缀 m 表示毫。例如 100m CPU、100 milliCPU 和 0.1 CPU 都相同。 精度不能超过 1m。
 
 CPU 请求只能使用绝对数量，而不是相对数量。0.1 在单核、双核或 48 核计算机上的 CPU 数量值是一样的。
+
+
+## pod的生命周期
+- pod的生命周期中的状态探测主要有 启动探测 就绪探测 存活探测
+- 启动探测只在pod启动时起作用，就绪探测和存活探测在贯穿pod的整个生命周期 
+
+
+### 启动探测器
+- 启动探测器主要是应对那些可能启动会非常慢的容器的状态检查,主要有EXEC  HTTP TCP三种方式 
+- 启动探测器只在启动时起作用，一旦通过检测，后面就交给 存活检查和 就绪检查 
+- 如果提供了启动探测(startup probe),则禁用所有其他探测,直到它成功为止
+```
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: liveness-port
+  failureThreshold: 30
+  periodSeconds: 10
+```
+- failureThreshold 表示最大尝试次数 periodSeconds表示重试间隔 
+
+
+### 就绪检查
+- 就绪检查针对pod在启动前，进行就绪状态的检查，只有通过就绪检查，pod状态才会被置为read 参与流量分配 
+- 就绪探测器在容器的整个生命周期中保持运行状态
+
+- 设置格式 
+```
+readinessProbe:
+  exec:
+    command:
+    - cat
+    - /tmp/healthy
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+``` 
+
+### 存活检查 
+- 存活检查的目的是在pod的整个运行周期中，定时的检查pod的存活状态 
+- 检查的手段有三种 exec  http tcp  
+- initialDelaySeconds 标识第一次执行前需要等待的时间
+- periodSeconds 表示间隔时间 
+- failureThreshold 标识失败容忍次数 
+- successThreshold 表示成功认定次数
+```
+//EXEC
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5 
+      periodSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+      timeoutSeconds: 1
+//HTTP
+   livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+        httpHeaders:
+        - name: Custom-Header
+          value: Awesome
+      initialDelaySeconds: 3
+      periodSeconds: 3
+//TCP
+livenessProbe:
+      tcpSocket:
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 20
+```

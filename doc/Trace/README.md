@@ -54,7 +54,7 @@ export SKYWALKING_RELEASE_NAMESPACE=skyapm
 oap:
   image:
     tag: 8.1.0-es6      #这里是设定oap的镜像版本,具体的镜像版本 参考  https://hub.docker.com/r/apache/skywalking-oap-server
-  storageType: elasticsearch6   #这里设置存储类型 
+  storageType: elasticsearch   #这里设置存储类型 
 
 ui:
   image:

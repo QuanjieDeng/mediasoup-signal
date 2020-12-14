@@ -185,6 +185,7 @@ class Client extends events.EventEmitter {
     log.debug(`message: user:${this.id} req  join room`);
     if (this.room === undefined) {
       log.error(`message: onClientRequestCom client:${this.id}  for user in undefined room user: ${this.user}`);
+      callback("error",{errmsg:"user's room undefuned",errcode:1000});
       this.disconnect();
       return;
     }

@@ -74,8 +74,8 @@ class Channel extends events.EventEmitter {
         // await limiterFlexible.consume(this.socket.handshake.address); // consume 1 point per event from IP
         await limiterFlexible.consume('global'); // consume 1 point per event from IP
       } catch(rejRes) {
-        log.error(`message: onToken to  many client`);
-        callback('error', 'too  many client');;
+        log.error(`message: onToken too  many client`);
+        callback("error",{errmsg:"up to  RateLimiter",errcode:1000});
         return;
       }
     }
@@ -88,25 +88,25 @@ class Channel extends events.EventEmitter {
           this.emit('connected', tokenDB, options, callback);
         } else {
           log.warn(`message: Token has invalid host, clientId: ${this.id}`);
-          callback('error', 'Invalid host');
+          callback("error",{errmsg:"Token has invalid host",errcode:1001});
           this.disconnect();
         }
       }).catch((reason) => {
         if (reason === 'error') {
           log.warn('message: Trying to use token that does not exist - ' +
                      `disconnecting Client, clientId: ${this.id}`);
-          callback('error', 'Token does not exist');
+          callback("error",{errmsg:"Token does not exist",errcode:1002});
           this.disconnect();
         } else if (reason === 'timeout') {
           log.warn('message: Nuve does not respond token check - ' +
                      `disconnecting client, clientId: ${this.id}`);
-          callback('error', 'Nuve does not respond');
+          callback("error",{errmsg:"Token check,Nuve does not respond",errcode:1003});
           this.disconnect();
         }
       });
     } else {
       log.warn(`message: Token authentication error, clientId: ${this.id}`);
-      callback('error', 'Authentication error');
+      callback("error",{errmsg:"Authentication error",errcode:1004});
       this.disconnect();
     }
   }

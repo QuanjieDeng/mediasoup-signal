@@ -4,13 +4,13 @@
 
 [请求类EVENT事件](#请求类event事件)
 
- [token--ok](#token)
+ [token](#token)
 
- [getRouterRtpCapabilities--ok](#getRouterRtpCapabilities)
+ [getRouterRtpCapabilities](#getRouterRtpCapabilities)
 
- [createWebRtcTransport--ok](#createWebRtcTransport)
+ [createWebRtcTransport](#createWebRtcTransport)
 
- [join-ok](#join)
+ [join](#join)
 
  [connectWebRtcTransport](#connectWebRtcTransport)
 
@@ -114,10 +114,23 @@
  "roomId":"12123123" //房间ID
 }
 
-失败的时候的返回错误信息字符串
-'Invalid host'
+失败返回
+{
+    "errmsg":"",
+    "errcode":1002
+}
 
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+|1000|到达限流器上限|
+|1001|token中的host字段错误|
+|1002|token不存在|
+|1003|token检查中，nuve未回应|
+|1004|认证失败(表示token中的signature字段值不匹配)|
+|1005|获取媒体服务失败|
+
 
 ### getRouterRtpCapabilities
 #### 说明

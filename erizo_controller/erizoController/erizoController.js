@@ -355,7 +355,7 @@ const listen =  () => {
                 log.error(`message: Room：${id} can't get mediaosupworker!`);
                 callback('error', {
                   errmsg: "get mediasoup worker failed",
-                  errcode:1002
+                  errcode:1005
                 });
               }
             };
@@ -380,18 +380,11 @@ const listen =  () => {
                   roomId: room.id,
                   clientId: client.id });
               })
-
-              // const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
-              // const client = await room.createClient(channel, token, options,agentId,routerId);
-  
-              // callback('success', {
-              //   roomId: room.id,
-              //   clientId: client.id });
             }else{
               log.error(`message: Room：${roomid} can't get mediaosupworker!`);
               callback('error', {
                 errmsg: "get mediasoup worker failed",
-                errcode:1002
+                errcode:1005
               });
             }
           };

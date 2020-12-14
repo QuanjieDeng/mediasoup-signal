@@ -64,17 +64,22 @@ class Channel extends events.EventEmitter {
       }
     };
     listenToSocketHandshakeEvents(this);
+    log.info(`new channel id:${this.id} socket:${this.socket.id}`);
+  }
+
+  getPrint(){
+    return `id:${this.id} socket:${this.socket.id}`
   }
 
   async onToken(options, callback) {
     const token = options.token;
-    log.debug('message: token received');
+    log.debug(`message: channel:${this.getPrint()} token received`);
     if(config.erizoController.ratelimit.global.global){
       try {
         // await limiterFlexible.consume(this.socket.handshake.address); // consume 1 point per event from IP
         await limiterFlexible.consume('global'); // consume 1 point per event from IP
       } catch(rejRes) {
-        log.error(`message: onToken too  many client`);
+        log.error(`message:channel:${this.getPrint()} onToken too  many client`);
         callback("error",{errmsg:"up to  RateLimiter",errcode:1000});
         return;
       }
@@ -87,32 +92,30 @@ class Channel extends events.EventEmitter {
           this.state = CONNECTED;
           this.emit('connected', tokenDB, options, callback);
         } else {
-          log.warn(`message: Token has invalid host, clientId: ${this.id}`);
+          log.warn(`message:channel:${this.getPrint()} Token has invalid host`);
           callback("error",{errmsg:"Token has invalid host",errcode:1001});
           this.disconnect();
         }
       }).catch((reason) => {
         if (reason === 'error') {
-          log.warn('message: Trying to use token that does not exist - ' +
-                     `disconnecting Client, clientId: ${this.id}`);
+          log.warn(`message:channel:${this.getPrint()} Trying to use token that does not exist disconnecting Client`);
           callback("error",{errmsg:"Token does not exist",errcode:1002});
           this.disconnect();
         } else if (reason === 'timeout') {
-          log.warn('message: Nuve does not respond token check - ' +
-                     `disconnecting client, clientId: ${this.id}`);
+          log.warn(`message:channel:${this.getPrint()}  Nuve does not respond token check disconnecting client`);
           callback("error",{errmsg:"Token check,Nuve does not respond",errcode:1003});
           this.disconnect();
         }
       });
     } else {
-      log.warn(`message: Token authentication error, clientId: ${this.id}`);
+      log.warn(`message:channel:${this.getPrint()} Token authentication error`);
       callback("error",{errmsg:"Authentication error",errcode:1004});
       this.disconnect();
     }
   }
 
   onDisconnect() {
-    log.debug('message: socket disconnected, code:', this.closeCode);
+    log.debug(`message:channel:${this.getPrint()} socket disconnected, code:${this.closeCode}`);
     if (this.closeCode !== WEBSOCKET_NORMAL_CLOSURE &&
         this.closeCode !== WEBSOCKET_GOING_AWAY_CLOSURE) {
       this.state = RECONNECTING;
@@ -169,10 +172,7 @@ class Channel extends events.EventEmitter {
     if (this.state !== CONNECTED) {
       return;
     }
-    log.debug('message: sending buffered messages, number:', buffer.length,
-      ', channelId:', this.id);
     buffer.forEach((message) => {
-      log.debug('message: sending buffered message, message:', message, ', channelId:', this.id);
       if(message.length ==3 &&  message[2]!= undefined){//长度为3 并且[2]不为undefied，则表明是有callback函数的，使用sendMessageSync发送
         this.sendMessageSync(...message);
       }else{

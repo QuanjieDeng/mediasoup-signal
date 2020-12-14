@@ -34,7 +34,7 @@ class Room extends events.EventEmitter {
   }
 
   static async create({ erizoControllerId, amqper,agentId,routerId, ecch, id,eapolicy}){
-    log.info('create() [roomId:%s]', id);
+    log.info(`create roomId:${id} agentId:${agentId}routerId:${routerId} eapolicy:${eapolicy} erizoControllerId:${erizoControllerId}`);
     
     const sfum =  await SFUConManager.create({id,amqper, ecch, erizoControllerId});
     sfum.addRouter(agentId,routerId);

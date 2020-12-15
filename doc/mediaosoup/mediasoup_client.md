@@ -6,77 +6,77 @@
 
  [token](#token)
 
- [getRouterRtpCapabilities](#getRouterRtpCapabilities)
+ [getRouterRtpCapabilities](#getrouterrtpcapabilities)
 
- [createWebRtcTransport](#createWebRtcTransport)
+ [createWebRtcTransport](#createwebrtctransport)
 
  [join](#join)
 
- [connectWebRtcTransport](#connectWebRtcTransport)
+ [connectWebRtcTransport](#connectwebrtctransport)
 
  [produce](#produce)
 
- [closeProducer](#closeProducer)
+ [closeProducer](#closeproducer)
 
- [pauseProducer](#pauseProducer)
+ [pauseProducer](#pauseproducer)
 
- [resumeProducer](#resumeProducer)
+ [resumeProducer](#resumeproducer)
 
- [pauseConsumer](#pauseConsumer)
+ [pauseConsumer](#pauseconsumer)
 
- [resumeConsumer](#resumeConsumer)
+ [resumeConsumer](#resumeconsumer)
 
- [restartIce](#restartIce)
+ [restartIce](#restartice)
 
- [setConsumerPreferredLayers](#setConsumerPreferredLayers)
+ [setConsumerPreferredLayers](#setconsumerpreferredlayers)
 
- [setConsumerPriority](#setConsumerPriority)
+ [setConsumerPriority](#setconsumerpriority)
 
- [requestConsumerKeyFrame](#requestConsumerKeyFrame)
+ [requestConsumerKeyFrame](#requestconsumerkeyframe)
 
- [produceData](#produceData)
+ [produceData](#producedata)
 
- [getTransportStats](#getTransportStats)
+ [getTransportStats](#gettransportstats)
 
- [getProducerStats](#getProducerStats)
+ [getProducerStats](#getproducerstats)
 
- [getConsumerStats](#getConsumerStats)
+ [getConsumerStats](#getconsumerstats)
 
- [getDataProducerStats](#getDataProducerStats)
+ [getDataProducerStats](#getdataproducerstats)
 
- [getDataConsumerStats](#getDataConsumerStats)
+ [getDataConsumerStats](#getdataconsumerstats)
 
- [applyNetworkThrottle](#applyNetworkThrottle)
+ [applyNetworkThrottle](#applynetworkthrottle)
 
- [resetNetworkThrottle](#resetNetworkThrottle)
+ [resetNetworkThrottle](#resetnetworkthrottle)
 
 [触发类EVENT事件](#触发类EVENT事件)
 
- [newConsumer](#newConsumer)
+ [newConsumer](#newconsumer)
 
- [newDataConsumer](#newDataConsumer)
+ [newDataConsumer](#newdataconsumer)
 
- [producerScore](#producerScore)
+ [producerScore](#producerscore)
 
- [newPeer](#newPeer)
+ [newPeer](#newpeer)
 
- [peerClosed](#peerClosed)
+ [peerClosed](#peerclosed)
 
- [downlinkBwe](#downlinkBwe)
+ [downlinkBwe](#downlinkbwe)
 
- [consumerClosed](#consumerClosed)
+ [consumerClosed](#consumerclosed)
 
- [consumerPaused](#consumerPaused)
+ [consumerPaused](#consumerpaused)
 
- [consumerResumed](#consumerResumed)
+ [consumerResumed](#consumerresumed)
 
- [consumerLayersChanged](#consumerLayersChanged)
+ [consumerLayersChanged](#consumerlayerschanged)
 
- [consumerScore](#consumerScore)
+ [consumerScore](#consumerscore)
 
- [dataConsumerClosed](#dataConsumerClosed)
+ [dataConsumerClosed](#dataconsumerclosed)
 
- [activeSpeaker](#activeSpeaker)
+ [activeSpeaker](#activespeaker)
 
 
 ## 说明 

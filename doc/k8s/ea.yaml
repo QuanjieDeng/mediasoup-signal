@@ -33,6 +33,25 @@ spec:
                 command:
                   - /bin/bash
                   - /opt/mediasoup-signal/erizo_controller/erizoAgent/prestop.sh
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - /opt/mediasoup-signal/erizo_controller/erizoAgent/ea_live.sh
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - /opt/mediasoup-signal/erizo_controller/erizoAgent/ea_live.sh
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
           resources:
             requests:
               memory: "64Mi"

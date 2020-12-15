@@ -33,6 +33,22 @@ spec:
                 command:
                   - /bin/bash
                   - /opt/mediasoup-signal/erizo_controller/erizoController/prestop.sh
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
           resources:
             requests:
               memory: "64Mi"

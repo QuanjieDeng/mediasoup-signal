@@ -216,6 +216,64 @@ exports.EcCloudHandler = (spec) => {
     }
   }
 
+
+
+
+  const   getErizoAgentPolicy = async (ip,eapolicy="LOOP")=>{
+    log.info(`message: getErizoAgentPolicy ip:${ip} eapolicy:${eapolicy}`);
+    let agentQueue = 'ErizoAgent';
+    if(eapolicy == "LOOP"){
+      if (getErizoAgent) {
+        agentQueue = getErizoAgent(agents, undefined);
+      }
+      return  agentQueue;
+
+    }else if(eapolicy =="TTL-BEST"){
+      // log.info(`message: getErizoAgentPolicy===${eapolicy}`);
+      const  agentlist = [];
+      let count = 0;
+      await new Promise((resolve)=>{
+        forEachAgent(async(agentId, agentInList)=>{
+          // log.info(`message: forEachAgent agentId:${agentId}`);
+            var earpcid =`ErizoAgent_${agentId}`
+            log.info(`eaid:${earpcid}`);
+            await amqper.callRpc(earpcid, 'getPingConst', [ip], { callback(resp){
+              try{
+                log.info(`message: getPingConst   earpcid:${earpcid} ea.ip:${agentInList.info.ip} rcpcallback:resp:${JSON.stringify(resp)}`);
+                if(resp  == "timeout"){
+                  return;
+                }
+                if(resp.retEvent == "sucess"){
+                  var newagent = {
+                    id:agentId,
+                    spent:resp.spent
+                  }
+                  agentlist.push(newagent);
+                }
+
+              }finally{
+                log.info(`agentId:${agentId} finnally`);
+                count+=1;
+                const agentIds = Object.keys(agents);
+                if(count === agentIds.length){
+                  resolve();
+                }
+              }
+
+            } });
+        });
+      });
+      
+      if(agentlist.length == 0){
+        log.warn(`message: EAping值搜集之后agentlist长度为0`);
+        return agentQueue
+      }
+      agentlist.sort((a,b)=>{return a.spent- b.spent});
+      var earpcid =`ErizoAgent_${ agentlist[0].id}`;
+      return earpcid;
+    }
+  }
+
   that.getErizoAgentsList = () => JSON.stringify(agents);
 
   return that;

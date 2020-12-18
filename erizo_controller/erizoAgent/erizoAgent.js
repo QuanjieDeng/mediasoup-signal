@@ -26,7 +26,6 @@ global.config.erizoAgent.useIndividualLogFiles =
   global.config.erizoAgent.useIndividualLogFiles || false;
 
 
-
 const BINDED_INTERFACE_NAME = global.config.erizoAgent.networkInterface;
 
 // Parse command line arguments

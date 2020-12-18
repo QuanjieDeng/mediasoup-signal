@@ -105,6 +105,7 @@ config.erizoController.reportSubscriptions = {
 config.erizoController.cloudHandlerPolicy = 'default_policy.js'; // default value: 'default_policy.js'
 config.erizoController.TTLBestForce = false; //强制开启TTLBest,开启后全部使用TTLBest模式
 config.erizoController.TTLBest = true;//开启后用户可选择使用TTL-BEST模式，否则使用默认的LOOP模式
+<<<<<<< HEAD
 
 config.erizoController.ratelimit = {};
 config.erizoController.ratelimit.global={
@@ -112,6 +113,8 @@ config.erizoController.ratelimit.global={
     points : 1000, //Number of points
     duration : 1, // Per second(s)
 }
+=======
+>>>>>>> origin/master
 /*********************************************************
  ERIZO AGENT CONFIGURATION
 **********************************************************/

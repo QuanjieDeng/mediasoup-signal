@@ -12,6 +12,7 @@ class Rooms extends events.EventEmitter {
     this.amqper = amqper;
     this.workermanage =  workermanage;
     this.rooms = new Map();
+    this.initMetrics();
   }
 
   size() {
@@ -52,6 +53,24 @@ class Rooms extends events.EventEmitter {
     this.rooms.set(id, room);
     this.emit('updated');
     room.on('room-empty', this.deleteRoom.bind(this, id));
+    room.on('transport_event', this.onTransPortEvent.bind(this));
+  }
+  onTransPortEvent(eventname,state){
+    log.info(`onTransPortEvent  eventname:${eventname} state:${state}`);
+    if(eventname === "sctpstatechange"){
+      if (state === 'failed'){
+        this.metrics.SCTPconnectionsFailed +=1;
+      }
+    }else if(eventname === "dtlsstatechange"){
+      if(state === 'failed'){
+        this.metrics.DTLSconnectionsFailed  +=1;
+      }
+
+    }else if(eventname === "icestatechange"){
+      if(state  === 'disconnected'){
+        this.metrics.ICEconnectionsFailed  +=1;
+      }
+    }
   }
 
   deleteRoom(id) {
@@ -60,6 +79,28 @@ class Rooms extends events.EventEmitter {
       this.emit('updated');
     }
   }
+
+  initMetrics(){
+    this.metrics = {
+      ICEconnectionsFailed: 0,
+      DTLSconnectionsFailed: 0,
+      SCTPconnectionsFailed: 0
+    };
+  };
+  /*
+  get  mediasouop-worker Metrics
+  it whill  clear the  Metrics
+  */
+  getAndResetMetrics = () => {
+    const metrics = Object.assign({}, this.metrics);
+
+    this.initMetrics();
+    return metrics;
+  };
+
+
+
+
 }
 
 exports.Rooms = Rooms;

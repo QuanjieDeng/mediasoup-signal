@@ -16,8 +16,9 @@ let AWS;
 
 const INTERVAL_TIME_EC_READY = 500;
 const TOTAL_ATTEMPTS_EC_READY = 20;
-const INTERVAL_TIME_CHECK_KA = 1000;
-const MAX_KA_COUNT = 10;
+
+const INTERVAL_TIME_CHECK_KA = 1000;  //每隔INTERVAL_TIME_CHECK_KA增加EC的保活包次数
+const MAX_KA_COUNT = 10;//EC允许的最大保活包间隔次数，和INTERVAL_TIME_CHECK_KA共同作用，控制EC的超时时间
 
 let getErizoController;
 
@@ -78,6 +79,10 @@ const unassignErizoController = (erizoControllerId) => {
     });
   });
 };
+const notifyECDownToEA = (ecid)=>{
+  log.warn(`messgae: notifyECDownToEA ecid:${ecid}`);
+  rpc.broadcast("ErizoAgent",{ method: 'handleEcDown', args: [ecid] });
+}
 
 const checkKA = () => {
   erizoControllerRegistry.getErizoControllers((erizoControllers) => {
@@ -88,6 +93,8 @@ const checkKA = () => {
           'does not respond. Deleting it.');
         erizoControllerRegistry.removeErizoController(id);
         unassignErizoController(id);
+        //notify to ea
+        notifyECDownToEA(id);
         return;
       }
       erizoControllerRegistry.incrementKeepAlive(id);
@@ -266,5 +273,16 @@ exports.deleteUser = (user, roomId, callback) => {
     }
   });
 };
+
+exports.getWorkerInfo = (callback) => {
+  const rpcID = `ErizoAgent`;
+  rpc.callRpc(rpcID,'getWorkerInfo',[],{ callback(result) {
+        callback(result);
+      }
+    });
+};
+
+
+
 
 exports.getEcQueue = getEcQueue;

@@ -2,6 +2,10 @@ FROM ubuntu:16.04
 
 MAINTAINER dengquanjie@giant.com
 
+
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y tzdata && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
 WORKDIR /opt
 
 
@@ -9,10 +13,14 @@ WORKDIR /opt
 RUN  apt-get update && apt-get install -y git wget curl
 RUN  apt-get install  -y  python-pip python-dev build-essential
 RUN  apt-get install  -y  python3-pip
+RUN  apt-get install  -y  net-tools
+RUN  apt-get install  -y  curl  
 RUN  apt-get remove  -y  python-pip python3-pip
 COPY  ./get-pip.py     /op/mediasoup-signal/
 RUN   python     /op/mediasoup-signal/get-pip.py
 RUN   python3     /op/mediasoup-signal/get-pip.py
+
+
 
 COPY .nvmrc package.json /opt/mediasoup-signal/
 

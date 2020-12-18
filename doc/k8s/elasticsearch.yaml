@@ -1,0 +1,231 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    elastic-app: elasticsearch
+  name: elasticsearch-admin
+  namespace: skyapm
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: elasticsearch-admin
+  labels:
+    elastic-app: elasticsearch
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: elasticsearch-admin
+    namespace: skyapm
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  labels:
+    elastic-app: elasticsearch
+    role: master
+  name: elasticsearch-master
+  namespace: skyapm
+spec:
+  serviceName: es-master
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      elastic-app: elasticsearch
+      role: master
+  template:
+    metadata:
+      labels:
+        elastic-app: elasticsearch
+        role: master
+    spec:
+      #将持久卷声明  
+      volumes:
+       - name: pv-storage-elastic-master
+         persistentVolumeClaim:
+           claimName: pvc-es-master     
+      nodeSelector:
+        es: enable
+      containers:
+        - name: elasticsearch-master
+          image: elasticsearch:6.4.0
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/bash", "-c", "sysctl -w vm.max_map_count=262144; ulimit -l unlimited;  ulimit -m unlimited ; chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data;"]
+          ports:
+            - containerPort: 9200
+              protocol: TCP
+            - containerPort: 9300
+              protocol: TCP
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            #修改es默认的数据存储目录，否则多个节点同时写一个目录es权限不允许                                           
+            - name: "path.data"
+              value: "/usr/share/elasticsearch/data/$(MY_POD_NAME)"            
+            - name: "cluster.name"
+              value: "elasticsearch-cluster"
+            - name: "bootstrap.memory_lock"
+              value: "false"
+            - name: "discovery.zen.ping.unicast.hosts"
+              value: "elasticsearch-discovery"
+            - name: "discovery.zen.minimum_master_nodes"
+              value: "2"
+            - name: "discovery.zen.ping_timeout"
+              value: "5s"
+            - name: "node.master"
+              value: "true"
+            - name: "node.data"
+              value: "false"
+            - name: "node.ingest"
+              value: "false"
+            - name: "ES_JAVA_OPTS"
+              value: "-Xms256m -Xmx256m"
+          securityContext:
+            privileged: true
+          #将持久卷映射为数据目录的父目录  
+          volumeMounts:
+            - name: pv-storage-elastic-master
+              mountPath: /usr/share/elasticsearch/data/            
+      imagePullSecrets:
+      - name: aliyun-secret            
+      serviceAccountName: elasticsearch-admin
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    elastic-app: elasticsearch
+  name: elasticsearch-discovery
+  namespace: skyapm
+spec:
+  ports:
+    - port: 9300
+      targetPort: 9300
+  selector:
+    elastic-app: elasticsearch
+    role: master
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  labels:
+    elastic-app: elasticsearch
+    role: data
+  name: elasticsearch-data
+  namespace: skyapm
+spec:
+  serviceName: es-data  
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      elastic-app: elasticsearch
+  template:
+    metadata:
+      labels:
+        elastic-app: elasticsearch
+        role: data
+    spec:
+      #将es-data持久卷声明
+      volumes:
+       - name: pv-storage-elastic-data
+         persistentVolumeClaim:
+           claimName: pvc-es-data 
+      nodeSelector:
+        es: enable
+      containers:
+        - name: elasticsearch-data
+          image: elasticsearch:6.4.0
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/bash", "-c", "sysctl -w vm.max_map_count=262144; ulimit -l unlimited;ulimit -m unlimited;chown -R elasticsearch:elasticsearch /usr/share/elasticsearch/data;"]
+          ports:
+            - containerPort: 9200
+              protocol: TCP
+            - containerPort: 9300
+              protocol: TCP
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            #修改es默认的数据存储目录，否则多个节点同时写一个目录es权限不允许                  
+            - name: "path.data"
+              value: "/usr/share/elasticsearch/data/$(MY_POD_NAME)"
+            - name: "cluster.name"
+              value: "elasticsearch-cluster"
+            - name: "bootstrap.memory_lock"
+              value: "false"
+            - name: "discovery.zen.ping.unicast.hosts"
+              value: "elasticsearch-discovery"
+            - name: "node.master"
+              value: "false"
+            - name: "node.data"
+              value: "true"
+            - name: "ES_JAVA_OPTS"
+              value: "-Xms256m -Xmx256m"
+          securityContext:
+            privileged: true
+          #将持久卷映射到数据目录的父目录  
+          volumeMounts:
+            - name: pv-storage-elastic-data
+              mountPath: /usr/share/elasticsearch/data/
+      # imagePullSecrets:
+      # - name: aliyun-secret          
+      serviceAccountName: elasticsearch-admin
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    elastic-app: elasticsearch-service
+  name: elasticsearch-service
+  namespace: skyapm
+spec:
+  ports:
+    - port: 9200
+      targetPort: 9200
+      nodePort: 32000
+  selector:
+    elastic-app: elasticsearch
+  type: NodePort
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    elastic-app: elasticsearch-service
+  name: elasticsearch-api-service
+  namespace: skyapm
+spec:
+  ports:
+    - port: 9300
+      targetPort: 9300
+      nodePort: 32100
+  selector:
+    elastic-app: elasticsearch
+  type: NodePort

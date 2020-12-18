@@ -1,0 +1,14 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mongodb-pv-licode
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfsmongodb
+  nfs:
+    path: /nfs_mongodb/mongodb
+    server: 192.168.94.40

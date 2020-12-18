@@ -77,6 +77,7 @@ class Room extends events.EventEmitter {
 			});
   }
   close(){
+	this._audioLevelObserver.close();
     this._mediasoupRouter.close();
   }
   getRouterId() {
@@ -521,14 +522,21 @@ class Room extends events.EventEmitter {
 				const transport = await this._mediasoupRouter.createWebRtcTransport(webRtcTransportOptions);
 				transport.on('sctpstatechange', (sctpState) =>
 				{
-				log.debug('WebRtcTransport "sctpstatechange" event [sctpState:%s]', sctpState);
+					log.debug('WebRtcTransport "sctpstatechange" event [sctpState:%s]', sctpState);
+					this.emit('transport_event',"sctpstatechange",sctpState);
 				});
 
 				transport.on('dtlsstatechange', (dtlsState) =>
 				{
-				if (dtlsState === 'failed' || dtlsState === 'closed'){
-					log.warn('WebRtcTransport "dtlsstatechange" event [dtlsState:%s]', dtlsState);
-				}
+					if (dtlsState === 'failed' || dtlsState === 'closed'){
+						log.warn('WebRtcTransport "dtlsstatechange" event [dtlsState:%s]', dtlsState);
+					}
+					this.emit('transport_event',"dtlsstatechange",dtlsState);
+				});
+				transport.on('icestatechange', (iceState) =>
+				{
+					log.debug('WebRtcTransport "icestatechange" event [iceState:%s]', iceState);
+					this.emit('transport_event',"icestatechange",iceState);
 				});
 						
 				// await transport.enableTraceEvent([ 'bwe' ]);

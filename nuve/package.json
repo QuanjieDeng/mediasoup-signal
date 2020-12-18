@@ -13,8 +13,10 @@
     "body-parser": "~1.19.0",
     "express": "~4.17.1",
     "log4js": "~1.0.1",
+    "mongodb": "^3.6.0",
     "mongojs": "~2.6.0",
-    "node-getopt": "~0.3.2"
+    "node-getopt": "~0.3.2",
+    "rate-limiter-flexible": "^2.1.10"
   },
   "contributors": [
     {

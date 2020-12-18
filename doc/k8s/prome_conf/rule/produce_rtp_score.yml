@@ -1,0 +1,10 @@
+groups:
+- name: mediasoup_transfer_server
+  rules:
+  - alert: LowProduceRTPScore
+    expr:   1 < avg_over_time(mediasoup_produce_score[1m])  <  5
+    labels:
+      type: RTPScore
+    annotations:
+      summary: low  produce score
+      description: 过去一分钟内produce平均分值低于10分，请注意

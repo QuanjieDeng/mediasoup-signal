@@ -28,6 +28,17 @@ exports.create = (req, res) => {
     res.status(401).send('Service not authorized for this action');
     return;
   }
+  if (req.body.name === undefined) {
+    log.info('message: createRoom - invalid  service name');
+    res.status(400).send('Invalid name');
+    return;
+  }
+
+  if (req.body.key === undefined) {
+    log.info('message: createRoom - invalid  service key');
+    res.status(400).send('Invalid key');
+    return;
+  }
 
   serviceRegistry.addService(req.body, (result) => {
     log.info(`message: createService success, serviceName: ${req.body.name}`);

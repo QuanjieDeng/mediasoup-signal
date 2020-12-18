@@ -15,6 +15,7 @@ class Room extends events.EventEmitter {
     this.erizoControllerId = erizoControllerId;
     this.amqper = amqper;
     this.ecch = ecch;
+    
     /*
     erizoAgentId 记录当前房间所在的EA,只有为LOOP模式时，该值记录了房间所在的EA
     */
@@ -25,18 +26,15 @@ class Room extends events.EventEmitter {
     this.routerId =  routerId;
     this.eapolicy = eapolicy;
     /*
-    在TLL-BEST模式时，AgentRouterMap存储当前房间所有的EA-router对
-    key为eaid+routerid组合 value为结构体存储具体的ID信息
-
+    在TLL-BEST模式时，sfum存储当前房间所有的EA-router对
+    负责管理房间所属的EA,和发起SFU级联的相关逻辑
     */
-    // this.AgentRouterMap = new Map();
-    // this.AgentRouterMap.set(`${agentId}@${routerId}`,{agentId:agentId,routerId:routerId});
     this.sfum =  sfum;
 
   }
 
   static async create({ erizoControllerId, amqper,agentId,routerId, ecch, id,eapolicy}){
-    log.info('create() [roomId:%s]', id);
+    log.info(`create roomId:${id} agentId:${agentId}routerId:${routerId} eapolicy:${eapolicy} erizoControllerId:${erizoControllerId}`);
     
     const sfum =  await SFUConManager.create({id,amqper, ecch, erizoControllerId});
     sfum.addRouter(agentId,routerId);
@@ -72,6 +70,8 @@ class Room extends events.EventEmitter {
   //    this.AgentRouterMap.set(ea_router_key,{agentId:agentId,routerId:routerId});
   //   }
   // }
+
+
 
   addRouter(agentId,routerId){
     this.sfum.addRouter(agentId,routerId);
@@ -124,7 +124,7 @@ class Room extends events.EventEmitter {
   onClientDisconnected(client) {
     this.sfum.delClient(client.agentId,client.routerId);
     if (this.clients.size === 0) {
-      log.debug(`message: deleting empty room, roomId: ${this.id}`);
+      log.info(`message: deleting empty room, roomId: ${this.id}`);
       this.emit('room-empty');
     }
   }
@@ -142,13 +142,15 @@ class Room extends events.EventEmitter {
   //房间内消息广播
   sendMessage(method, args,{ excludePeer = undefined } = {}) {
     this.forEachClient((client) => {
-      if(client.id == excludePeer.id){
+      if(excludePeer && (client.id == excludePeer.id)){
         return;
       }
 
       log.debug(`message: sendMsgToRoom,clientId:${client.id},roomId:${this.id} method:${method}`);
-
-      client.sendMessage(method, args);
+      setTimeout(() => {
+        client.sendMessage(method, args);
+      }, 0);
+      
     });
   }
 
@@ -164,13 +166,19 @@ class Room extends events.EventEmitter {
   //通知EA删除用户
   removeClientEA(roomid,clientId,agentId){
     log.info(`message: removeClient clientId ${clientId}`);
-    const args = [roomid, clientId];
-    const ealist = this.sfum.getEAlist();
-    ealist.forEach((v,index,arry)=>{
-      var   agentid = `ErizoAgent_${v}`;
-      this.amqper.callRpc(agentid, 'deleteUser', args);
+    const tmpargs = [roomid, clientId];
+    // const ealist = this.sfum.getEAlist();
+    // ealist.forEach((v,index,arry)=>{
+    //   var   agentid = `ErizoAgent_${v}`;
+    //   this.amqper.callRpc(agentid, 'deleteUser', args);
 
-    });
+    // });
+    /*
+    在全集群内广播，而不仅是在房间拥有的EA上广播
+    可能的情况是当大量连接创建时，在LOOP模式下，EC的房间来不及创建，新进的用户发现没有创建room,就会再次申请EA，
+    但是最终一个房间只会使用一个EA，就会导致一些EA上创建了一个空的房间，所以在删除用户时进行全域删除
+    */
+    this.amqper.broadcast("ErizoAgent",{ method: 'deleteUser', args: tmpargs});
 
 
   };
@@ -192,6 +200,7 @@ class Rooms extends events.EventEmitter {
   async getOrCreateRoom(erizoControllerId, agentId,routerId,id,eapolicy) {
     let room = this.rooms.get(id);
     if (room === undefined) {
+      log.debug(`message:getOrCreateRoom room:${id} not exist,whill create`);
       const  amqper =  this.amqper;
       const  ecch =  this.ecch;
       room =await Room.create({erizoControllerId,agentId,routerId, amqper, ecch, id,eapolicy});

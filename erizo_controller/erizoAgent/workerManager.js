@@ -41,12 +41,12 @@ exports.WorkerManager = (spec) => {
         mediasoupWorkers.push(worker);
 
         // Log worker resource usage every X seconds.
-        setInterval(async () =>
-        {
-            const usage = await worker.getResourceUsage();
+        // setInterval(async () =>
+        // {
+        //     const usage = await worker.getResourceUsage();
 
-            log.info('mediasoup Worker resource usage [pid:%d]: %o', worker.pid, usage);
-        }, 120000);
+        //     log.info('mediasoup Worker resource usage [pid:%d]: %o', worker.pid, usage);
+        // }, 120000);
     }
   };
 
@@ -56,6 +56,18 @@ exports.WorkerManager = (spec) => {
           nextMediasoupWorkerIdx = 0;
       return worker;
   };
+
+  that.getMediasoupWorkerList= () =>{
+    const  list = [];
+    mediasoupWorkers.forEach((v,index,arry)=>{
+        list.push(v);
+    });
+    return   list;
+};
+   
+that.getsize= () =>{
+    return mediasoupWorkers.length;
+};
   
 
   return that;

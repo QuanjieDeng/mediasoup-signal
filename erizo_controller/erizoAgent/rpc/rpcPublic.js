@@ -3,15 +3,32 @@ const RovReplManager = require('./../../common/ROV/rovReplManager').RovReplManag
 const logger = require('./../../common/logger').logger;
 const log = logger.getLogger('RPCPublic');
 const ping = require ("net-ping");
+const { AwaitQueue } = require('awaitqueue');
+// Async queue to manage rooms.
+// @type {AwaitQueue}
+const queue = new AwaitQueue();
 let replManager = false;
 const ErizoAgentId =  erizoAgent.getAgentId();
 const rooms =  erizoAgent.getRooms();
 
 exports.getMediasoupWork= async  (roomid, erizoControllerid,callback)=>{
   try {
-    const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
-    log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
-    callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
+    //如果当前状态为0，则对该请求不做处理
+    if(erizoAgent.getMyState() == 0){
+      log.info(`message: getMediasoupWork mystate:${erizoAgent.getMyState()}`);
+      return;
+    }
+    /*
+    这里使用queue，去保证请求的顺序执行，防止对一个房间重复创建
+    */
+    queue.push(async()=>{
+      const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
+      log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+      callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
+    });
+    // const room = await  erizoAgent.getOrCreateRoom({ roomid,erizoControllerid});
+    // log.debug(`message: getMediasoupWork  roomid: ${roomid} agentId: ${ErizoAgentId} erizoControllerid:${erizoControllerid} routerid:${room.getRouterId()}`);
+    // callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:room.getRouterId()});
   } catch (error) {
     log.error('message: error  getEA, error:', error);
     callback('callback',{ roomId: roomid, agentId: ErizoAgentId,routerId:undefined});
@@ -82,6 +99,23 @@ exports.rovMessage=  (args, callback) => {
 exports.getErizoAgents = (callback) =>{
   erizoAgent.getReporter().getErizoAgent(callback);
 };
+
+/*
+处理EC宕机事件,遍历所有的房间，如果该房间所在的EC为通知中的，则删除该房间，以及他关联的所有对象
+*/
+exports.handleEcDown = (ecid) =>{
+  log.debug(`message handleEcDown ecid:${ecid}`);
+  rooms.forEachRoom((room)=>{
+    if(room.erizoControllerId === ecid){
+      log.info(`handleEcDown,room:${room.id} whill delete,blown ec:${ecid}`);
+      room.close();
+      rooms.deleteRoom(room.id);
+    }
+  });
+
+};
+
+
 
 
 //测算ping值
@@ -201,4 +235,13 @@ exports.resumePipProduce = (roomid,localproduceid,callback) =>{
     return;
   }
   room.resumePipProduce(localproduceid,callback);
+}
+
+
+
+exports.getWorkerInfo = (callback)=>{
+  log.debug(`message:getWorkerInfo`);
+  erizoAgent.getWorkerInfo(function(info){
+    callback('callback',{info:info});
+  });
 }

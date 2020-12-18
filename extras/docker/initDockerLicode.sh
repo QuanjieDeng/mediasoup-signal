@@ -15,6 +15,7 @@ parse_arguments(){
     NUVE=true
     ERIZOCONTROLLER=true
     ERIZOAGENT=true
+    ROV=true
 
   else
     while [ "$1" != "" ]; do
@@ -33,6 +34,9 @@ parse_arguments(){
         ;;
         "--erizoAgent")
         ERIZOAGENT=true
+        ;;
+        "--ROV")
+        ROV=true
         ;;
       esac
       shift
@@ -123,6 +127,13 @@ run_erizoAgent() {
   node erizoAgent.js &
 }
 
+run_ROV() {
+  echo "String Rov"
+  cd $ROOT/erizo_controller/ROV
+  node rovMetricsServer.js &
+}
+
+
 parse_arguments $*
 
 cd $ROOT/scripts
@@ -144,15 +155,24 @@ fi
 
 
 if [ "$NUVE" == "true" ]; then
-  echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
-  echo "config.nuve.dataBaseURL = '$MONGO_URL';" >> /opt/mediasoup-signal/licode_config.js
+  if [ $RABBITMQ_URL ]; then
+    echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+
+  if [ $MONGO_URL ]; then
+    echo "config.nuve.dataBaseURL = '$MONGO_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
   run_nuve
 fi
 
 if [ "$ERIZOCONTROLLER" == "true" ]; then
-  echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
-  echo "config.erizoController.publicIP = '$PUBLIC_IP';" >> /opt/mediasoup-signal/licode_config.js
-  
+  if [ $RABBITMQ_URL ]; then
+    echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+
+  if [ $PUBLIC_IP ]; then
+    echo "config.erizoController.publicIP = '$PUBLIC_IP';" >> /opt/mediasoup-signal/licode_config.js
+  fi
 
   if [ $WARING_N_ROOM ]; then
     echo "config.erizoController.warning_n_rooms = $WARING_N_ROOM;" >> /opt/mediasoup-signal/licode_config.js
@@ -166,10 +186,20 @@ if [ "$ERIZOCONTROLLER" == "true" ]; then
 fi
 
 if [ "$ERIZOAGENT" == "true" ]; then
-  echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
-  echo "config.erizoAgent.publicIP = '$PUBLIC_IP';" >> /opt/mediasoup-signal/licode_config.js
-  echo "config.mediasoup.workerSettings.rtcMinPort = '$RTCMINPORT';" >> /opt/mediasoup-signal/licode_config.js
-  echo "config.mediasoup.workerSettings.rtcMaxPort = '$RTCMAXPORT';" >> /opt/mediasoup-signal/licode_config.js
+  if [ $RABBITMQ_URL ]; then
+    echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+  if [ $PUBLIC_IP ]; then
+    echo "config.erizoAgent.publicIP = '$PUBLIC_IP';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+
+  if [ $RTCMINPORT ]; then
+    echo "config.mediasoup.workerSettings.rtcMinPort = '$RTCMINPORT';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+  if [ $RTCMAXPORT ]; then
+    echo "config.mediasoup.workerSettings.rtcMaxPort = '$RTCMAXPORT';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+  
   if [ $DEBUG ]; then
     export DEBUG="$DEBUG"
   else
@@ -177,6 +207,13 @@ if [ "$ERIZOAGENT" == "true" ]; then
   fi
   
   run_erizoAgent
+fi
+
+if [ "$ROV" == "true" ];then
+  if [ $RABBITMQ_URL ]; then
+    echo "config.rabbit.url = '$RABBITMQ_URL';" >> /opt/mediasoup-signal/licode_config.js
+  fi
+  run_ROV
 fi
 
 

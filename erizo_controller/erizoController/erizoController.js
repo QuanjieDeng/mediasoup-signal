@@ -1,12 +1,24 @@
 /* global require, setInterval, clearInterval, exports */
-
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'ec',
+    instanceName: 'ec',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 /* eslint-disable no-param-reassign */
-
+require('stackup');
 const rpcPublic = require('./rpc/rpcPublic');
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
+const { AwaitQueue } = require('awaitqueue');
+// Async queue to manage rooms.
+// @type {AwaitQueue}
+const queue = new AwaitQueue();
 
 // Configuration default values
 global.config = config || {};
@@ -146,7 +158,6 @@ let myId;
 const rooms = new Rooms(amqper, ecch);
 
 let myState;
-
 const addToCloudHandler = (callback) => {
   // eslint-disable-next-line global-require
   const interfaces = require('os').networkInterfaces();
@@ -286,7 +297,7 @@ const updateMyState = () => {
 const _getEAPolicy = async (ineapolicy)=>{
   log.info(`_getEAPolicy ineapolicy:${ineapolicy} TTLBestForce:${global.config.erizoController.TTLBestForce} TTLBest:${global.config.erizoController.TTLBest}`);
   if(!ineapolicy){
-    ineapolicy = "LOOP";
+    ineapolicy = "ROOM-BEST";
   }
 
   let newpolicy = ineapolicy;
@@ -294,7 +305,7 @@ const _getEAPolicy = async (ineapolicy)=>{
     return "TTL-BEST";
   }
   if(!global.config.erizoController.TTLBest && ineapolicy=="TTL-BEST"){
-    return "LOOP";
+    return "ROOM-BEST";
   }
 
   return newpolicy;
@@ -322,7 +333,7 @@ const listen =  () => {
       const room =  await rooms.getRoomById(token.room);
       if(room){//房间已经存在
         log.info(`message: room:${token.room}  exist yet,eapolicy:${room.eapolicy}`);
-        if( room.eapolicy  === "LOOP"){//一个房间就一个router不需要再次申请router
+        if( room.eapolicy  === "ROOM-BEST"){//一个房间就一个router不需要再次申请router
           const client = await room.createClient(channel, token, options,room.erizoAgentId,room.routerId);
           callback('success', {
             roomId: room.id,
@@ -344,7 +355,7 @@ const listen =  () => {
                 log.error(`message: Room：${id} can't get mediaosupworker!`);
                 callback('error', {
                   errmsg: "get mediasoup worker failed",
-                  errcode:1002
+                  errcode:1005
                 });
               }
             };
@@ -361,18 +372,19 @@ const listen =  () => {
           const rpccallback = async(roomid, agentId, routerId) => {
             if(roomid != "timeout"){
               log.info(`listen rpccallback  room:${roomid}, agentid${agentId}  routerid:${routerId}`);
-
-              const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
+              queue.push(async()=>{
+                const room =  await rooms.getOrCreateRoom(myId,agentId,routerId, token.room,options.eapolicy);
               const client = await room.createClient(channel, token, options,agentId,routerId);
-  
-              callback('success', {
-                roomId: room.id,
-                clientId: client.id });
+
+                callback('success', {
+                  roomId: room.id,
+                  clientId: client.id });
+              })
             }else{
-              log.error(`message: Room：${id} can't get mediaosupworker!`);
+              log.error(`message: Room：${roomid} can't get mediaosupworker!`);
               callback('error', {
                 errmsg: "get mediasoup worker failed",
-                errcode:1002
+                errcode:1005
               });
             }
           };
@@ -492,7 +504,7 @@ exports.forwordSingleMsgToClient = (clientId,msg, methed,callback) => {
     };
     room.sendSingleMessageToClient(clientId, msg, methed,socketiocallback.bind(this));
   }else{
-    log.error(`messages: forwordSingleMsgToClient   can't  get  room by client:${clientId}`);
+    log.error(`messages: forwordSingleMsgToClient   can't  get  room by client:${clientId}  methed:${methed}`);
     callback("error",{data:{}});
   }
 };
@@ -520,5 +532,11 @@ amqper.connect(() => {
   }
 });
 
+
+//add  handle   signal  
+process.on("SIGTERM",function(){
+  log.info(`message: get sineal  SIGTERM set  my state  0`);
+  nuve.setInfo({ id: myId, state: 0 });
+});
 
 

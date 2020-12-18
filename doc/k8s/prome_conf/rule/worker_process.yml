@@ -1,0 +1,10 @@
+groups:
+- name: mediasoup_transfer_server
+  rules:
+  - alert: WorkProcessNum
+    expr:  mediasoup_active_erizojs_processes < 2
+    labels:
+      type: workernum
+    annotations:
+      summary: worker子进程数量异常
+      description: worrker子进程数量低于设定值，请注意

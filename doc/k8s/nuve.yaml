@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nuve
+  labels:
+    app: nuve
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nuve
+      version: v1
+  template:
+    metadata:
+      annotations: 
+        'cni.projectcalico.org/ipv4pools': "[\"office-net\"]"
+      labels:
+        app: nuve
+        version: v1
+    spec:
+      imagePullSecrets:
+        - name: gianthub-registry-key
+      containers:
+        - name: nuve
+          image: docker-registry.ztgame.com.cn/im/mediasoup-signal:1.0.2
+          args: ["--nuve"]
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+          - containerPort: 3000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+           - name: licode-data
+             mountPath: /opt/mediasoup-signal/licode_config.js
+             subPath: licode_config.js
+      volumes:
+        - name: licode-data
+          configMap:
+            name: licode-config

@@ -67,16 +67,21 @@ amqper.connect(() => {
   const rovClient = new RovClient(amqper);
   const rovMetricsGatherer =
     new RovMetricsGatherer(rovClient, promClient, config.rov.statsPrefix, log);
-  promClient.collectDefaultMetrics(
-    { prefix: config.rov.statsPrefix, timeout: config.rov.statsPeriod });
+  // promClient.collectDefaultMetrics(
+  //   { prefix: config.rov.statsPrefix, timeout: config.rov.statsPeriod });
 
   setInterval(() => {
-    rovMetricsGatherer.gatherMetrics().then(() => {
-      log.debug('Gathered licode metrics');
-    })
-      .catch((error) => {
-        log.error('Error gathering metrics', error);
-      });
+    try {
+      rovMetricsGatherer.gatherMetrics()
+    } catch (error) {
+      log.debug('Gathered licode metrics error:',error);
+    }
+    // rovMetricsGatherer.gatherMetrics().then(() => {
+    //   log.debug('Gathered licode metrics');
+    // })
+    //   .catch((error) => {
+    //     log.error('Error gathering metrics', error);
+    //   });
   }, config.rov.statsPeriod);
   server.get('/metrics', (req, res) => {
     res.set('Content-Type', register.contentType);

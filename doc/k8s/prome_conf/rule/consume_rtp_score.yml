@@ -1,0 +1,10 @@
+groups:
+- name: mediasoup_transfer_server
+  rules:
+  - alert: LowConsumeRTPScore
+    expr: 1 <  avg_over_time(mediasoup_consume_score[1m])  <  5
+    labels:
+      type: RTPScore
+    annotations:
+      summary: low  consume  score
+      description: 过去一分钟内consume平均分值低于10分，请注意

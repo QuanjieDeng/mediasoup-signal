@@ -1,15 +1,45 @@
 /* global require, __dirname */
 
 // eslint-disable-next-line import/no-extraneous-dependencies
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'nuve',
+    instanceName: 'nuve',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 const express = require('express');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const bodyParser = require('body-parser');
 const rpc = require('./rpc/rpc');
 
+const rateLimiterGlobal =  require('./../common/Middleware/rateLimiterGlobal')
+const rateLimiteGlobalQuen =  require('./../common/Middleware/rateLimiteGlobalQuen')
+const ralteLimiterSingle =  require('./../common/Middleware/ralteLimiterSingle')
+
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
 
 const app = express();
+console.log(`ratelimit  global:${config.nuve.ratelimit.global.global} quen:${config.nuve.ratelimit.global.quen} signal:${config.nuve.ratelimit.signal.signal}`);
+
+if(config.nuve.ratelimit.signal.signal){
+  app.use(ralteLimiterSingle);
+}
+
+if(config.nuve.ratelimit.global.global){
+  if(config.nuve.ratelimit.global.quen){
+    app.use(rateLimiteGlobalQuen);
+  }else{
+    app.use(rateLimiterGlobal);
+  }
+}
+
+
+
+
 
 rpc.connect();
 
@@ -22,6 +52,8 @@ const servicesResource = require('./resource/servicesResource');
 const serviceResource = require('./resource/serviceResource');
 const usersResource = require('./resource/usersResource');
 const userResource = require('./resource/userResource');
+const workerResource = require('./resource/workerResource');
+
 
 app.use(express.static(`${__dirname}/public`));
 app.use(bodyParser.json());
@@ -75,6 +107,10 @@ app.get('/rooms/:room/users', usersResource.getList);
 
 app.get('/rooms/:room/users/:user', userResource.getUser);
 app.delete('/rooms/:room/users/:user', userResource.deleteUser);
+
+
+app.get('/workers', workerResource.getWorkerInfo);
+
 
 // handle 404 errors
 app.use((req, res) => {

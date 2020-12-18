@@ -4,86 +4,86 @@
 
 [请求类EVENT事件](#请求类event事件)
 
- [token--ok](#token)
+ [token](#token)
 
- [getRouterRtpCapabilities--ok](#getRouterRtpCapabilities)
+ [getRouterRtpCapabilities](#getrouterrtpcapabilities)
 
- [createWebRtcTransport--ok](#createWebRtcTransport)
+ [createWebRtcTransport](#createwebrtctransport)
 
- [join-ok](#join)
+ [join](#join)
 
- [connectWebRtcTransport](#connectWebRtcTransport)
+ [connectWebRtcTransport](#connectwebrtctransport)
 
  [produce](#produce)
 
- [closeProducer](#closeProducer)
+ [closeProducer](#closeproducer)
 
- [pauseProducer](#pauseProducer)
+ [pauseProducer](#pauseproducer)
 
- [resumeProducer](#resumeProducer)
+ [resumeProducer](#resumeproducer)
 
- [pauseConsumer](#pauseConsumer)
+ [pauseConsumer](#pauseconsumer)
 
- [resumeConsumer](#resumeConsumer)
+ [resumeConsumer](#resumeconsumer)
 
- [restartIce](#restartIce)
+ [restartIce](#restartice)
 
- [setConsumerPreferredLayers](#setConsumerPreferredLayers)
+ [setConsumerPreferredLayers](#setconsumerpreferredlayers)
 
- [setConsumerPriority](#setConsumerPriority)
+ [setConsumerPriority](#setconsumerpriority)
 
- [requestConsumerKeyFrame](#requestConsumerKeyFrame)
+ [requestConsumerKeyFrame](#requestconsumerkeyframe)
 
- [produceData](#produceData)
+ [produceData](#producedata)
 
- [getTransportStats](#getTransportStats)
+ [getTransportStats](#gettransportstats)
 
- [getProducerStats](#getProducerStats)
+ [getProducerStats](#getproducerstats)
 
- [getConsumerStats](#getConsumerStats)
+ [getConsumerStats](#getconsumerstats)
 
- [getDataProducerStats](#getDataProducerStats)
+ [getDataProducerStats](#getdataproducerstats)
 
- [getDataConsumerStats](#getDataConsumerStats)
+ [getDataConsumerStats](#getdataconsumerstats)
 
- [applyNetworkThrottle](#applyNetworkThrottle)
+ [applyNetworkThrottle](#applynetworkthrottle)
 
- [resetNetworkThrottle](#resetNetworkThrottle)
+ [resetNetworkThrottle](#resetnetworkthrottle)
 
 [触发类EVENT事件](#触发类EVENT事件)
 
- [newConsumer](#newConsumer)
+ [newConsumer](#newconsumer)
 
- [newDataConsumer](#newDataConsumer)
+ [newDataConsumer](#newdataconsumer)
 
- [producerScore](#producerScore)
+ [producerScore](#producerscore)
 
- [newPeer](#newPeer)
+ [newPeer](#newpeer)
 
- [peerClosed](#peerClosed)
+ [peerClosed](#peerclosed)
 
- [downlinkBwe](#downlinkBwe)
+ [downlinkBwe](#downlinkbwe)
 
- [consumerClosed](#consumerClosed)
+ [consumerClosed](#consumerclosed)
 
- [consumerPaused](#consumerPaused)
+ [consumerPaused](#consumerpaused)
 
- [consumerResumed](#consumerResumed)
+ [consumerResumed](#consumerresumed)
 
- [consumerLayersChanged](#consumerLayersChanged)
+ [consumerLayersChanged](#consumerlayerschanged)
 
- [consumerScore](#consumerScore)
+ [consumerScore](#consumerscore)
 
- [dataConsumerClosed](#dataConsumerClosed)
+ [dataConsumerClosed](#dataconsumerclosed)
 
- [activeSpeaker](#activeSpeaker)
+ [activeSpeaker](#activespeaker)
 
 
 ## 说明 
 - 该文档描述的是licode 使用mediasoup替换EJ后，重新定义的客户端的socket.io的接口
 
 ## 请求类EVENT事件
-### token
+### [token](#目录)
 #### 说明 
 - token事件是连接建立之后第一个需要发送的事件，主要用来对客户端进行认证
 #### 请求方式
@@ -114,12 +114,25 @@
  "roomId":"12123123" //房间ID
 }
 
-失败的时候的返回错误信息字符串
-'Invalid host'
+失败返回
+{
+    "errmsg":"",
+    "errcode":1002
+}
 
 ```
+#### 错误码
+|  错误码   | 含义  |
+|  ----  | ----  |
+|1000|到达限流器上限|
+|1001|token中的host字段错误|
+|1002|token不存在|
+|1003|token检查中，nuve未回应|
+|1004|认证失败(表示token中的signature字段值不匹配)|
+|1005|获取媒体服务失败|
 
-### getRouterRtpCapabilities
+
+### [getRouterRtpCapabilities](#目录)
 #### 说明
 - 该方法用户请求用户所在房间的router的媒体能力
 #### 请求方式
@@ -155,7 +168,7 @@
 | 2002  | 到EA找不到user |
 
 
-### createWebRtcTransport
+### [createWebRtcTransport](#目录)
 #### 说明 
 - 请求创建WebRtcTransport,该接口最终会调用medisoup的接口创建一个WebRtcTransport
 一个用户最多只需要创建两个transport，一个收，一个发，对于一个房间内的多路流，mediasoup使用
@@ -253,7 +266,7 @@
 
 
 
-### join
+### [join](#目录)
 #### 说明 
 - join请求，表明用户请求加入到房间
 - 客户端需要保证在WebRtcTransport创建完毕之后在调用此方法，调用此方法表明客户端已经做好了拉流的准备
@@ -321,7 +334,7 @@
 | 2003  | 用户已经加入 |
 
 
-### connectWebRtcTransport
+### [connectWebRtcTransport](#目录)
 #### 说明
 - 客户端需要等待本地的transport抛出事件connect后才可以调用该接口
 - 调用该接口后，双方开启dtls握手过程
@@ -374,7 +387,7 @@
 
 | 2003  | 找不到transport |
 
-### produce
+### [produce](#目录)
 #### 说明
 - produce请求表明客户端已经做好了推流的准备,produce不等待客户端的sendTransport抛出produce事件之后才可以调用
 - 客户端需要在发送join 请求后调用 sendTransport.produce,然后才会触发produce事件
@@ -466,7 +479,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到transport |
 
-### closeProducer
+### [closeProducer](#目录)
 #### 说明
 - 当麦克风或者时视频采集设备连接失败或者时被禁用，则需要发送该事件关闭对应的producer
 
@@ -501,7 +514,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到transport |
 
-### pauseProducer
+### [pauseProducer](#目录)
 #### 说明
 - 暂时静音或者暂时关闭视频,则需要发送该事件到服务器 
 
@@ -537,7 +550,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2004  | 找不到producer |
 
 
-### resumeProducer
+### [resumeProducer](#目录)
 #### 说明
 - 重新打开音频或者时视频 
 
@@ -571,7 +584,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到producer |
-### pauseConsumer
+### [pauseConsumer](#目录)
 #### 说明
 - 请求暂停consumer
 
@@ -606,7 +619,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到consume |
 
-### resumeConsumer
+### [resumeConsumer](#目录)
 #### 说明
 - 请求恢复consumer
 
@@ -642,7 +655,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2004  | 找不到consume |
 
 
-### restartIce
+### [restartIce](#目录)
 #### 说明
 - 请求重启ICE
 - 服务器返回新的ICE参数后，需要调用客户端的sendTransport.restartIce({ iceParameters })
@@ -682,7 +695,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 
 
-### setConsumerPreferredLayers
+### [setConsumerPreferredLayers](#目录)
 #### 说明
 - 设置视频编解码的 空间/时间层  相关的知识可了解：  SVC（可适性视频编码或可分级视频编码）
 
@@ -724,7 +737,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到consume |
 
-### setConsumerPriority
+### [setConsumerPriority](#目录)
 #### 说明
 - 当有多个consumer时，设置其中的一个consumer优先级
 - 当估计的输出比特率不足以满足所有视频消费者的需求时，消费者的优先级才有意义
@@ -763,7 +776,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到consume |
 
-### requestConsumerKeyFrame
+### [requestConsumerKeyFrame](#目录)
 #### 说明
 - 请求一个媒体源的关键帧
 
@@ -801,7 +814,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 用户还没有加入房间 |
 | 2004  | 找不到consume |
 
-### produceData
+### [produceData](#目录)
 #### 说明
 - 请求创建消息生产者
 - 客户端通过调用 sendTransport.produceData创建生产者，当抛出事件producedata时向服务器发送该请求 
@@ -852,7 +865,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2004  | 找不到对应的transport |
 
 
-### getTransportStats
+### [getTransportStats](#目录)
 #### 说明
 - 请求Transport状态
 
@@ -920,7 +933,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 | 2003  | 找不到transport |
 
-### getProducerStats
+### [getProducerStats](#目录)
 #### 说明
 - 请求生产者状态
 
@@ -978,7 +991,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 | 2003  | 找不到produce |
 
 
-### getConsumerStats
+### [getConsumerStats](#目录)
 #### 说明
 - 请求消费者状态
 
@@ -1036,7 +1049,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 | 2003  | 找不到consume |
 
-### getDataProducerStats
+### [getDataProducerStats](#目录)
 #### 说明
 - 请求消息生产者状态
 
@@ -1080,7 +1093,7 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 | 2003  | 找不到dataproduce |
 
-### getDataConsumerStats
+### [getDataConsumerStats](#目录)
 #### 说明
 - 请求消息消费者状态
 
@@ -1124,16 +1137,16 @@ this._sendTransport.on('produce', ({ kind, rtpParameters, appData }, callback, e
 
 | 2003  | 找不到dataconsume |
 
-### applyNetworkThrottle
+### [applyNetworkThrottle](#目录)
 #### 说明
 - 请求应用网络带宽控制
-### resetNetworkThrottle
+### [resetNetworkThrottle](#目录)
 #### 说明
 - 请求重置网络带宽控制
 
 ## 触发类EVENT事件
 
-### newConsumer
+### [newConsumer](#目录)
 #### 说明
 - 通知新的消费者，服务器已经创建好，当前处于暂停状态，当客户端正确回复，则运行该comsumer
 - 客户端根据自身的需求判断是否要创建本地的consume
@@ -1234,7 +1247,7 @@ try {
 }
 ```
 
-### newDataConsumer
+### [newDataConsumer](#目录)
 #### 说明
 - 通知新的数据消费者，服务器已经创建好，当前处于暂停状态，当客户端正确回复，则运行该comsumer
 - 客户端必须回复此消息
@@ -1293,7 +1306,7 @@ try {
 }
 ```
 
-### producerScore
+### [producerScore](#目录)
 #### 说明
 - 通知一个producer的质量，不需要回复
 
@@ -1313,7 +1326,7 @@ try {
 ```
 
 
-### newPeer
+### [newPeer](#目录)
 #### 说明 
 - 通知有新的用户加入 
 
@@ -1334,7 +1347,7 @@ try {
 }
 ```
 
-### peerClosed
+### [peerClosed](#目录)
 #### 说明 
 - 通知有用户离开
 #### 通知格式
@@ -1348,7 +1361,7 @@ try {
 }
 ```
 
-### downlinkBwe
+### [downlinkBwe](#目录)
 #### 说明 
 - 暂时不清楚-demo里面时没有处理
 
@@ -1366,7 +1379,7 @@ try {
 ```
 
 
-### consumerClosed
+### [consumerClosed](#目录)
 #### 说明 
 - 通知有流退出了，需要关闭本地的comsumer对象 
 - 客户端在收到该事件收需调用  consumer.close()  关闭对应的本地consume
@@ -1384,7 +1397,7 @@ try {
 
 
 
-### consumerPaused
+### [consumerPaused](#目录)
 #### 说明 
 - 通知有流暂停了 
 - 客户端在收到该事件需要找到本地对应的consume，调用consumer.pause()
@@ -1400,7 +1413,7 @@ try {
 }
 ```
 
-### consumerResumed
+### [consumerResumed](#目录)
 #### 说明 
 - 通知有流恢复了 
 - 客户端收到该事件后根据ID找到本地的consume,调用 consumer.resume()
@@ -1416,7 +1429,7 @@ try {
 ```
 
 
-### consumerLayersChanged
+### [consumerLayersChanged](#目录)
 #### 说明  
 - 通知consume的SVC等级变化
 - 客户端暂时不需要处理，存储即可
@@ -1434,7 +1447,7 @@ try {
 }
 ```
 
-### consumerScore
+### [consumerScore](#目录)
 #### 说明 
 - 通知comsuer的分数
 - 客户端暂时不需要处理
@@ -1455,7 +1468,7 @@ try {
 ```
 
 
-### dataConsumerClosed
+### [dataConsumerClosed](#目录)
 #### 说明 
 - 通知有消息流关闭了
 - 客户端行为：需要关闭本地的comsumer对象，dataConsumer.close() 
@@ -1471,7 +1484,7 @@ try {
 }
 ```
 
-### activeSpeaker
+### [activeSpeaker](#目录)
 #### 说明 
 - 通知当前正在讲话的用户以及对应的音量
 

@@ -4,8 +4,11 @@ const logger = require('./../../common/logger').logger;
 const crypto = require('crypto');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const uuidv4 = require('uuid/v4');
-
+const config = require('./../../../licode_config');
 const log = logger.getLogger('Channel');
+const limiterQueue =  require('./../ralteLimiterMemory').limiterQueue;
+const limiterFlexible =  require('./../ralteLimiterMemory').limiterFlexible;
+
 
 const NUVE_KEY = global.config.nuve.superserviceKey;
 
@@ -14,7 +17,8 @@ const RECONNECTION_TIMEOUT = 10000;
 const calculateSignature = (token, key) => {
   const toSign = `${token.tokenId},${token.host}`;
   const signed = crypto.createHmac('sha1', key).update(toSign).digest('hex');
-  return (new Buffer(signed)).toString('base64');
+  // return (new Buffer(signed)).toString('base64');
+  return (Buffer.from(signed)).toString('base64');
 };
 
 const checkSignature = (token, key) => {
@@ -30,6 +34,8 @@ const checkSignature = (token, key) => {
 function listenToSocketHandshakeEvents(channel) {
   channel.socket.on('token', channel.onToken.bind(channel));
   channel.socket.on('reconnected', channel.onReconnected.bind(channel));
+  channel.socket.on('disconnect', channel.onDisconnect.bind(channel));
+
   channel.socket.on('disconnect', channel.onDisconnect.bind(channel));
 }
 
@@ -59,43 +65,58 @@ class Channel extends events.EventEmitter {
       }
     };
     listenToSocketHandshakeEvents(this);
+    log.info(`new channel id:${this.id} socket:${this.socket.id}`);
   }
 
-  onToken(options, callback) {
+  getPrint(){
+    return `id:${this.id} socket:${this.socket.id}`
+  }
+
+  async onToken(options, callback) {
     const token = options.token;
-    log.debug('message: token received');
+    log.debug(`message: channel:${this.getPrint()} token received`);
+    if(config.erizoController.ratelimit.global.global){
+      try {
+        // await limiterFlexible.consume(this.socket.handshake.address); // consume 1 point per event from IP
+        await limiterFlexible.consume('global'); // consume 1 point per event from IP
+      } catch(rejRes) {
+        log.error(`message:channel:${this.getPrint()} onToken too  many client`);
+        callback("error",{errmsg:"up to  RateLimiter",errcode:1000});
+        return;
+      }
+    }
+
+
     if (token && checkSignature(token, NUVE_KEY)) {
       this.nuve.deleteToken(token.tokenId).then((tokenDB) => {
         if (token.host === tokenDB.host) {
           this.state = CONNECTED;
           this.emit('connected', tokenDB, options, callback);
         } else {
-          log.warn(`message: Token has invalid host, clientId: ${this.id}`);
-          callback('error', 'Invalid host');
+          log.warn(`message:channel:${this.getPrint()} Token has invalid host`);
+          callback("error",{errmsg:"Token has invalid host",errcode:1001});
           this.disconnect();
         }
       }).catch((reason) => {
         if (reason === 'error') {
-          log.warn('message: Trying to use token that does not exist - ' +
-                     `disconnecting Client, clientId: ${this.id}`);
-          callback('error', 'Token does not exist');
+          log.warn(`message:channel:${this.getPrint()} Trying to use token that does not exist disconnecting Client`);
+          callback("error",{errmsg:"Token does not exist",errcode:1002});
           this.disconnect();
         } else if (reason === 'timeout') {
-          log.warn('message: Nuve does not respond token check - ' +
-                     `disconnecting client, clientId: ${this.id}`);
-          callback('error', 'Nuve does not respond');
+          log.warn(`message:channel:${this.getPrint()}  Nuve does not respond token check disconnecting client`);
+          callback("error",{errmsg:"Token check,Nuve does not respond",errcode:1003});
           this.disconnect();
         }
       });
     } else {
-      log.warn(`message: Token authentication error, clientId: ${this.id}`);
-      callback('error', 'Authentication error');
+      log.warn(`message:channel:${this.getPrint()} Token authentication error`);
+      callback("error",{errmsg:"Authentication error",errcode:1004});
       this.disconnect();
     }
   }
 
   onDisconnect() {
-    log.debug('message: socket disconnected, code:', this.closeCode);
+    log.debug(`message:channel:${this.getPrint()} socket disconnected, code:${this.closeCode}`);
     if (this.closeCode !== WEBSOCKET_NORMAL_CLOSURE &&
         this.closeCode !== WEBSOCKET_GOING_AWAY_CLOSURE) {
       this.state = RECONNECTING;
@@ -119,6 +140,7 @@ class Channel extends events.EventEmitter {
 
   onReconnected(clientId) {
     this.state = CONNECTED;
+    clearTimeout(this.disconnecting);
     this.emit('reconnected', clientId);
   }
 
@@ -151,10 +173,7 @@ class Channel extends events.EventEmitter {
     if (this.state !== CONNECTED) {
       return;
     }
-    log.debug('message: sending buffered messages, number:', buffer.length,
-      ', channelId:', this.id);
     buffer.forEach((message) => {
-      log.debug('message: sending buffered message, message:', message, ', channelId:', this.id);
       if(message.length ==3 &&  message[2]!= undefined){//长度为3 并且[2]不为undefied，则表明是有callback函数的，使用sendMessageSync发送
         this.sendMessageSync(...message);
       }else{

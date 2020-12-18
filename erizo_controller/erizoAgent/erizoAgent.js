@@ -1,9 +1,18 @@
 /* global require */
-
+const config = require('./../../licode_config');
+if(config.skywalking.open){
+  console.log(`load skywalking agent`);
+  require("skyapm-nodejs-mediasoup").start({
+    serviceName: 'ea',
+    instanceName: 'ea',
+    directServers: config.skywalking.url,
+    authentication: config.skywalking.authentication
+  });
+}
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Getopt = require('node-getopt');
 // eslint-disable-next-line import/no-unresolved
-const config = require('./../../licode_config');
+
 
 // Configuration default values
 global.config = config || {};
@@ -139,17 +148,22 @@ if (global.config.erizoAgent.publicIP === '' || global.config.erizoAgent.publicI
   publicIP = global.config.erizoAgent.publicIP;
 }
 global.config.erizoAgent.publicIP =publicIP ;
+//初始化webrtctransport info
+if(!process.env.MEDIASOUP_LISTEN_IP){
+  global.config.mediasoup.webRtcTransportOptions.listenIps[0].ip =  global.config.erizoAgent.publicIP;
+}  
 // Load submodules with updated config
 const logger = require('./../common/logger').logger;
 const Room =  require('./models/room').Room;
 const log = logger.getLogger('ErizoAgent');
 const amqper = require('./../common/amqper');
+const { V4MAPPED } = require('dns');
 const myErizoAgentId = guid();
-const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata });
 const wm = require('./workerManager').WorkerManager({ amqper,myErizoAgentId });
 const Rooms = require('./models/rooms').Rooms;
 const rooms =   new Rooms(amqper,wm);
-
+const reporter = require('./erizoAgentReporter').Reporter({ id: myErizoAgentId,ip:publicIP, metadata,rooms });
+let myState = 1; //1正常  0 不可用
 
 
 rooms.on('updated',function(){
@@ -166,6 +180,7 @@ exports.getAgentId = () => myErizoAgentId;
 exports.getAmqp = () => amqper;
 exports.getRooms = () => rooms;
 exports.getVM = () => wm;
+exports.getMyState = () => myState;
 
 
 run();
@@ -213,3 +228,145 @@ exports.getOrCreateRoom = async({ roomid, erizoControllerid }) =>{
 
 	return room;
 }
+
+
+
+
+var fs = require( 'fs' );
+var os = require( 'os' );
+const { map } = require('async');
+var CPUCoreNumbers = os.cpus().length;
+// var CPUTikHistory = null;
+var getProcessCPUUsage = ( pid, oldProcessTick, CPUTikHistory,sysTickPerSec ) => {
+    log.info(`getProcessCPUUsage pid:${pid} oldProcessTick:${oldProcessTick} CPUTikHistory:${CPUTikHistory}`);
+    var ProcessTickSum = 0;
+    if( Array.isArray( pid ) ){
+        pid.forEach( p => {
+            let ProcessStat = fs.readFileSync( `/proc/${p}/stat`, 'utf8' );
+            let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
+            if( ProcessStatArr == null ) return null;
+            ProcessTickSum += parseInt( ProcessStatArr[14] ) + parseInt( ProcessStatArr[15] )+ parseInt( ProcessStatArr[16] )+ parseInt( ProcessStatArr[17] );
+        } )
+    }else{
+        let ProcessStat = fs.readFileSync( `/proc/${pid}/stat`, 'utf8' );
+        let ProcessStatArr = ProcessStat.match( /(\w+)+/g )
+        if( ProcessStatArr == null ) return null;
+        ProcessTickSum = parseInt( ProcessStatArr[14] ) + parseInt( ProcessStatArr[15] )+parseInt( ProcessStatArr[16] )+ parseInt( ProcessStatArr[17] );;
+    }
+
+    let TikSum = 0;
+    if( sysTickPerSec == null ){
+        let CPUStat = fs.readFileSync( '/proc/stat', 'utf8' );
+        let MatchLine = CPUStat.match(/(.*)\n/);
+        if( MatchLine == null ){
+            console.error( "This function not match this machain, please take care" );
+            process.exit();
+        }
+        let CPULineArr = MatchLine[1].match( /(\w+)+/g );
+        // console.log( CPULineArr )
+        if( CPULineArr[0] != 'cpu' ){
+            console.error( "This function not match this machain, please take care" );
+            process.exit();
+        }
+        CPULineArr.forEach( (num) => {
+            let i = parseInt( num );
+            if( isNaN( i ) ) return;
+            TikSum += parseInt(num);
+        } )
+        if( CPUTikHistory == 0 ){
+            CPUTikHistory = TikSum;
+        }
+    }
+
+    if( ( oldProcessTick == null ) || ( oldProcessTick == 0 ) ){
+        if( sysTickPerSec == null ){
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+                sysTick: TikSum,
+                CPUTikHistory:CPUTikHistory
+            }
+        }else{
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+                CPUTikHistory:CPUTikHistory
+            }
+        }
+    }
+
+    if( sysTickPerSec == null ){
+        DiffSysTick = TikSum - CPUTikHistory;
+        CPUTikHistory = TikSum;
+        if( DiffSysTick == 0 ){
+            return {
+                rate: "0",
+                processTick: ProcessTickSum,
+                sysTick: TikSum,
+                CPUTikHistory:CPUTikHistory
+            }
+        }
+        let rate = ( ProcessTickSum - oldProcessTick )*100/DiffSysTick*CPUCoreNumbers
+        return {
+            rate: rate.toFixed(1),
+            processTick: ProcessTickSum,
+            sysTick: TikSum,
+            CPUTikHistory:CPUTikHistory
+        }
+    }else{
+        let rate = ( ProcessTickSum - oldProcessTick )*100/sysTickPerSec*CPUCoreNumbers;
+
+        return {
+            rate: rate.toFixed(1),
+            processTick: ProcessTickSum,
+            CPUTikHistory:CPUTikHistory
+        }
+    }
+}
+
+
+
+
+const worker_info_map = new Map();
+
+exports.getWorkerInfo =async (callback)=>{
+
+  const  workerlist = await  wm.getMediasoupWorkerList();
+  let produceconut = 0;
+  const infolist = [];
+  await new Promise(async (resolve)=>{
+    workerlist.forEach(async(v,index,arry)=>{
+      try{
+        var tmpusage =  worker_info_map.get(v.pid);
+        if(!tmpusage){
+          tmpusage = {
+            processTick:0,
+            CPUTikHistory:0
+          }
+        }
+        const  usage =  getProcessCPUUsage(v.pid,tmpusage.processTick,tmpusage.CPUTikHistory);
+        worker_info_map.set(v.pid,usage);
+
+        var  resp = {
+          pid:v.pid,
+          rate:usage.rate
+        }
+        infolist.push(resp);
+      }finally{
+        produceconut += 1;
+        if(produceconut === workerlist.length){
+          resolve();
+        }
+      }
+    });
+  });
+  callback(infolist);
+}
+
+
+
+//add  handle   signal  
+process.on("SIGTERM",function(){
+  log.info(`message: get sineal  SIGTERM set mystate 0`);
+  myState = 0;
+});

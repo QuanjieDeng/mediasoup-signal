@@ -2,6 +2,16 @@
 
 [nuve鉴权说明](#nuve鉴权说明)
 
+[service](#service)
+
+[创建service](#创建service)
+
+[获取service列表](#获取service列表)
+
+[获取单个service信息](#获取单个service信息)
+
+[删除单个service](#删除单个service)
+
 [Rooms](#rooms)
 
 [创建房间](#创建房间)
@@ -81,6 +91,159 @@ mauth_role=bb
 对密文A再次使用base64加密 得到最终密文
 python 环境需要把密文转为ascii即可
 
+
+# [service](#目录)
+service是用来区分不同的服务域提出的概念，一个service对应的是一类开发者的语音服务
+一个service 有三个基本的属性  name(名称)  serviceid(服务ID)  key(服务key)
+每个service的serviceid-key对都是全局唯一的
+
+在service之上，还有个superservice概念，他代表服务集群本身，
+他提供id-key对用来对service相关的操作做鉴权
+
+service相关的接口，在认证头中使用的必须是superserver对应的id-key对
+
+## [创建service](#目录)
+
+**请求URL：** 
+- ` http://xx.com/services `
+  
+**请求方式：**
+- POST 
+
+**参数：** 
+
+|参数名|必选|类型|说明|
+|:----|:---|:----- |-----   |
+|name |是  |string |服务名称 |
+|key  |是  |string |服务key     |
+
+
+**请求示例**
+```
+  {
+    "name": "XXX游戏语音服务",
+    "key": "123123"
+  }
+```
+
+ **返回示例**
+
+``` 
+ret-code 200 
+5f97c060070b490b49a7b7f1  服务ID
+
+ret-code 401
+认证不通过 
+
+ret-code 200
+参数错误
+
+```
+
+## [获取service列表](#目录)
+**请求URL：** 
+- ` http://xx.com/services `
+  
+**请求方式：**
+- GET 
+
+
+ **返回示例**
+
+``` 
+ret-code  401
+认证失败 
+
+ret-code 200
+[
+	{
+		'_id': '5e840a110410a611bce8f4d2',
+		'name': 'service-A',
+		'key': '123',
+		'rooms':[
+			{
+				'_id':"112312312",
+				'name':'room-a'
+			},
+			{
+				'_id':"112312312",
+				'name':'room-B'
+			},
+		]
+	},
+	{
+		'_id': '5e840a110410a611bce8f4d2',
+		'name': 'service-B',
+		'key': '123',
+		'rooms':[
+			{
+				'_id':"112312312",
+				'name':'room-a'
+			},
+			{
+				'_id':"112312312",
+				'name':'room-B'
+			},
+		]
+	},
+]
+```
+
+## [获取单个service信息](#目录)
+**请求URL：** 
+- ` http://xx.com//services/:services_id `
+  
+**请求方式：**
+- GET 
+
+ **返回示例**
+
+``` 
+ret-code  401 
+认证失败 
+
+ret-code 404
+未找到service
+
+ret-code  200
+
+{
+	'_id': '5e840a110410a611bce8f4d2',
+	'name': 'service-B',
+	'key': '123',
+	'rooms':[
+		{
+			'_id':"112312312",
+			'name':'room-a'
+		},
+		{
+			'_id':"112312312",
+			'name':'room-B'
+		},
+	]
+}
+```
+
+## [删除单个service](#目录)
+**请求URL：** 
+- ` http://xx.com/services/:service_id `
+  
+**请求方式：**
+- DELETE 
+
+ **返回示例**
+
+``` 
+ret-code 401
+认证失败 
+
+ret-code 404
+未找到service
+
+ret-code 200
+删除成功
+```
+
 # [Rooms](#目录)
 一个房间就是一个音频会议室，每个与会人员都可以推流或者是订阅其他的流
 一个房间对象有一下几个属性
@@ -104,13 +267,11 @@ python 环境需要把密文转为ascii即可
 |options |是  |json对象 | 参数    |
 | |参数  |必选 | 类型    |说明|
 | |data  |否 | json对象    |房间的附加信息|
-| |p2p  |否| bool    |标识是不是点对点会话|
-| |mediaConfiguration  |否 | string    |房间媒体配置字符串|
-| |eapolicy  |是 | string    |房间级联策略 LOOP 或者 TTL-BEST|
+| |eapolicy  |是 | string    |房间级联策略 ROOM-BEST 或者 TTL-BEST|
 
 **关于eapolicy**
 在创建房间时，用户选择具体的SFU分配策略
-- LOOP为默认的策略，这种策略下服务器随机原则分配SFU
+- ROOM-BEST 为默认的策略，这种策略下服务器根据房间数量最少优先原则分配SFU
 - TTL-BEST为高级策略，这种策略下服务器根据客户端到SFU的网络距离选择最合适的SFU分配
 
 
@@ -122,9 +283,7 @@ python 环境需要把密文转为ascii即可
       "date":{
 	  	"room_color": 'red',
 		"room_description": 'Room for testing metadata'
-	   },
-      "p2p": false,
-      "mediaConfiguration": "default"
+	   }
     }
   }
 ```
@@ -134,8 +293,6 @@ python 环境需要把密文转为ascii即可
 ``` 
 {
 	'name': 'TEST-ROOM',
-	'p2p': True,
-	'mediaConfiguration': 'default',
 	'_id': '5e573703a4cd0a0b66b4ea8d'
 }
 ```
@@ -145,9 +302,7 @@ python 环境需要把密文转为ascii即可
 |参数名|类型|说明|
 |:-----  |:-----|-----                           |
 |name |string   |房间名称|
-|p2p |bool   |是否为点对点会话|
 |_id |string   |房间ID|
-|mediaConfiguration |string   |房间的媒体配置信息|
 
 ## [房间列表](#目录)
 **请求URL：** 
@@ -210,7 +365,6 @@ ret-code  200
 {
 	'name': 'basicExampleRoom',
 	'data': {'basicExampleRoom': True},
-	'mediaConfiguration': 'default',
 	'_id': '5dbf9e52e2b9d87712463b70'
 }
 ```

@@ -1,6 +1,8 @@
 /* global require */
 /* eslint-disable  class-methods-use-this */
 
+const { Logger } = require('log4js/lib/logger');
+
 const logger = require('./../common/logger').logger;
 
 const log = logger.getLogger('RovClient');
@@ -104,7 +106,6 @@ class RovClient {
     this.components = {
       erizoControllers: new Map(), // erizoControllers: { id: info }
       erizoAgents: new Map(),
-      erizoJS: new Map(),
     };
     this.defaultSession = undefined;
   }
@@ -150,13 +151,6 @@ class RovClient {
     first.connect().then(first.openRemoteSession.bind(this));
   }
 
-  connectToFirstErizoJS() {
-    if (this.components.erizoJS.size === 0) {
-      return;
-    }
-    const first = this.components.erizoJS.values().next().value;
-    first.connect().then(first.openRemoteSession.bind(this));
-  }
 
   getErizoControllers() {
     return new Promise((resolve, reject) => {
@@ -213,26 +207,10 @@ class RovClient {
         reject('No erizoAgent session');
         return;
       }
-      this.components.erizoJS.clear();
-      this._establishComponentConnections(this.components.erizoAgents).then(() => {
-        const erizoListPromises = [];
-        this.components.erizoAgents.forEach((agent) => {
-          erizoListPromises.push(agent.runAndGetPromise('console.log(context.toJSON())'));
-        });
-        return Promise.all(erizoListPromises);
-      }).then((erizoResults) => {
-        erizoResults.forEach((erizoJsJSON) => {
-          const erizoJsProcesses = JSON.parse(erizoJsJSON);
-          erizoJsProcesses.forEach((process) => {
-            let erizoJsEntry = Object.assign({}, process);
-            erizoJsEntry.componentType = 'erizoJS';
-            erizoJsEntry.rpcId = `ErizoJS_${process.id}`;
-            erizoJsEntry = this._setRovCallsForComponent(erizoJsEntry);
-            this.components.erizoJS.set(process.id, erizoJsEntry);
-          });
-        });
+      this._establishComponentConnections(this.components.erizoAgents).then(()=>{
         resolve();
-      }).catch((error) => {
+      }).
+      catch((error) => {
         log.error('Error in getErizoJSProcesses', error);
         reject();
       });

@@ -1,0 +1,66 @@
+---
+#es master节点的持久卷
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+    name: pv-es-master
+    labels:
+        pv: pv-es-master   
+spec:
+    capacity:
+        storage: 10Gi
+    accessModes:
+        - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    storageClassName: nfs
+    nfs:
+        server: 192.168.94.117  #这里请写nfs服务器的ip 
+        path: /nfs-share/esmaster
+---
+#es数据节点的持久卷
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+    name: pv-es-data
+    labels:
+        pv: pv-es-data    
+spec:
+    capacity:
+        storage: 10Gi
+    accessModes:
+        - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Recycle
+    storageClassName: nfs
+    nfs:
+        server:  192.168.94.117 #这里请写nfs服务器的ip 
+        path: /nfs-share/esdata
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: pvc-es-master
+spec:
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: nfs
+    selector:
+        matchLabels:
+            pv: pv-es-master  
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: pvc-es-data
+spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+        requests:
+            storage: 10Gi
+    storageClassName: nfs
+    selector:
+        matchLabels:
+            pv: pv-es-data

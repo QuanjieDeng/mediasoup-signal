@@ -15,9 +15,15 @@
     "Channel":"INFO",
     "Connection": "INFO",
     "ErizoController": "INFO",
+<<<<<<< HEAD
+    "ErizoJSController": "DEBUG",
+    "ErizoAgent": "INFO",
+    "ErizoAgentReporter": "DEBUG",
+=======
     "ErizoJSController": "INFO",
     "ErizoAgent": "INFO",
     "ErizoAgentReporter": "ERROR",
+>>>>>>> origin/master
     "EcCloudHandler": "INFO",
     "Room": "INFO",
     "Rooms":"INFO",

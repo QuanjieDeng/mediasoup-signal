@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-for-nuve
+spec:
+  rules:                      
+  - host: ztgame.licode.com   
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: nuve-cluster-service
+          servicePort: 3000

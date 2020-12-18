@@ -56,13 +56,13 @@ echo ${RELEASEMSG}
 
 RELEASE_MAJOR=`echo "${VERSION}" | sed "s/v//g"`
 WORKERDIR="MEDIASOUP_SIGNALE_RELEASEBUILD"
-GIT_USER="dengquanjie"
-GIT_PWD="QuanjieDeng%4011"
+GIT_USER="XXXX"
+GIT_PWD="XXXXX"
 token="j-u8ZkAFK51XnWs_s61F"
-DOCKER_USER="dengquanjie"
-DOCKER_PASS="Ztgame%40123"
+DOCKER_USER="XXXX"
+DOCKER_PASS="XXXXX"
 DOCKER_TAG=${RELEASE_MAJOR}
-DOCKER_NAME="docker-registry.ztgame.com.cn/im/mediasoup-signal:${DOCKER_TAG}"
+DOCKER_NAME="XXXXX:${DOCKER_TAG}"
 GITLAB_RELEASE_TAG="v${RELEASE_MAJOR}"
 echo  "release_version:"${RELEASE_MAJOR}
 echo  "docker_tag:"${DOCKER_TAG}

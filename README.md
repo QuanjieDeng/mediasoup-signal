@@ -1,4 +1,5 @@
 # mediasoup-signal
+[English](https://github.com/QuanjieDeng/mediasoup-signal/blob/master/README_EN.md)
 
 基于meidiasoup实现的信令服务器
 

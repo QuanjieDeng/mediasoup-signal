@@ -9,8 +9,7 @@ NAMESPACE=licode3
 kubectl   create  namespace  ${NAMESPACE}
 
 #创建私有仓库secret
-kubectl -n  ${NAMESPACE}  create secret docker-registry registry-key  --docker-server=docker-registry.ztgame.com.cn  --docker-username=dengquanjie   --docker-password=Ztgame@123   --docker-email=dengquanjie@ztgame.com
-
+kubectl -n    ${NAMESPACE}  create secret docker-registry self-registry-key --docker-server=  --docker-username=   --docker-password=   --docker-email=
 
 #Create  ConfigMap
 kubectl     create   configmap   licode-config   --from-file=./conf      -n    ${NAMESPACE}

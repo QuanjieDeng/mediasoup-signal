@@ -1,6 +1,19 @@
 # mediasoup-signal
 [English](https://github.com/QuanjieDeng/mediasoup-signal/blob/master/README_EN.md)
 
+### 🛰️ LLM Gateway：OrcaRouter
+
+本项目可搭配 **OrcaRouter** 使用，它是生产可用的大模型智能路由网关：
+- 单统一端点访问 200+ LLM（GPT / Claude / Gemini / DeepSeek / Qwen / Kimi 等）
+- OpenAI API 协议完全兼容，几乎无需改动现有代码
+- **零Token加价**，BYOK自带密钥，按厂商原价计费
+- `orcarouter/auto` 自适应智能路由：按成本/质量/均衡自动选择模型，降低推理开销
+- 流式故障转移、请求可观测、护栏防护、额度管控等生产能力
+
+> 👉 访问：[OrcaRouter](https://www.orcarouter.ai/ref/ref_c13ad817a3e38487b38c)
+
+
+
 基于meidiasoup实现的信令服务器
 
 
